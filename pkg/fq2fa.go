@@ -4,10 +4,11 @@ import (
 	"os"
 	"bufio"
 	"fmt"
+	"github.com/jgbaldwinbrown/iter"
 )
 
-func ToFa(it Iter[FqEntry]) *Iterator[FaEntry] {
-	return Transform(it, func(f FqEntry) (FaEntry, error) {
+func ToFa(it iter.Iter[FqEntry]) *iter.Iterator[FaEntry] {
+	return iter.Transform(it, func(f FqEntry) (FaEntry, error) {
 		return f.FaEntry, nil
 	})
 }

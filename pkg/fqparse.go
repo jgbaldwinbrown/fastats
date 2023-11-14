@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"bufio"
 	"io"
+	"github.com/jgbaldwinbrown/iter"
 )
 
 type FqEntry struct {
@@ -47,14 +48,14 @@ func parseFastq(r io.Reader, yield func(FqEntry) error) error {
 	return nil
 }
 
-func ParseFastq(r io.Reader) *Iterator[FqEntry] {
-	return &Iterator[FqEntry]{Iteratef: func(yield func(FqEntry) error) error {
+func ParseFastq(r io.Reader) *iter.Iterator[FqEntry] {
+	return &iter.Iterator[FqEntry]{Iteratef: func(yield func(FqEntry) error) error {
 		return parseFastq(r, yield)
 	}}
 }
 
-func FqChrlens(it Iter[FqEntry]) *Iterator[FaLen] {
-	return &Iterator[FaLen]{Iteratef: func(yield func(FaLen) error) error {
+func FqChrlens(it iter.Iter[FqEntry]) *iter.Iterator[FaLen] {
+	return &iter.Iterator[FaLen]{Iteratef: func(yield func(FaLen) error) error {
 		return it.Iterate(func (f FqEntry) error {
 			falen := Chrlen(f.FaEntry)
 			return yield(falen)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"encoding/csv"
+	"github.com/jgbaldwinbrown/iter"
 )
 
 type GffEntry[AttT any] struct {
@@ -52,8 +53,8 @@ func ParseGffEntry[AT any](line []string, attributeParse func(string) (AT, error
 	return g, e
 }
 
-func ParseGff[AT any](r io.Reader, attributeParse func(string) (AT, error)) *Iterator[GffEntry[AT]] {
-	return &Iterator[GffEntry[AT]]{Iteratef: func(yield func(GffEntry[AT]) error) error {
+func ParseGff[AT any](r io.Reader, attributeParse func(string) (AT, error)) *iter.Iterator[GffEntry[AT]] {
+	return &iter.Iterator[GffEntry[AT]]{Iteratef: func(yield func(GffEntry[AT]) error) error {
 		cr := csv.NewReader(r)
 		cr.LazyQuotes = true
 		cr.Comma = rune('\t')
@@ -91,6 +92,6 @@ func ParseAttributePairs(field string) ([]AttributePair, error) {
 	return out, nil
 }
 
-func ParseGffFlat(r io.Reader) *Iterator[GffEntry[[]AttributePair]] {
+func ParseGffFlat(r io.Reader) *iter.Iterator[GffEntry[[]AttributePair]] {
 	return ParseGff(r, ParseAttributePairs)
 }

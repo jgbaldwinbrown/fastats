@@ -5,6 +5,7 @@ import (
 	"os"
 	"flag"
 	"bufio"
+	"github.com/jgbaldwinbrown/iter"
 )
 
 func AddKmers(kmap map[string]int64, k int, seq string) {
@@ -13,7 +14,7 @@ func AddKmers(kmap map[string]int64, k int, seq string) {
 	}
 }
 
-func CountKmers(it Iter[FaEntry], k int) (map[string]int64, error) {
+func CountKmers(it iter.Iter[FaEntry], k int) (map[string]int64, error) {
 	m := map[string]int64{}
 	err := it.Iterate(func(f FaEntry) error {
 		AddKmers(m, k, f.Seq)
@@ -27,8 +28,8 @@ type Kmer struct {
 	Count int64
 }
 
-func KmerIter(m map[string]int64) *Iterator[Kmer] {
-	return &Iterator[Kmer]{Iteratef: func(yield func(Kmer) error) error {
+func KmerIter(m map[string]int64) *iter.Iterator[Kmer] {
+	return &iter.Iterator[Kmer]{Iteratef: func(yield func(Kmer) error) error {
 		for seq, count := range m {
 			if e := yield(Kmer{seq, count}); e != nil {
 				return e
@@ -38,7 +39,7 @@ func KmerIter(m map[string]int64) *Iterator[Kmer] {
 	}}
 }
 
-func KmerHist(it Iter[Kmer]) ([]int64, error) {
+func KmerHist(it iter.Iter[Kmer]) ([]int64, error) {
 	var out []int64
 	e := it.Iterate(func(k Kmer) error {
 		out = GrowLen(out, int(k.Count) + 1)

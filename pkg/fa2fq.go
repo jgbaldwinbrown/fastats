@@ -1,13 +1,14 @@
 package fastats
 
 import (
+	"github.com/jgbaldwinbrown/iter"
 	"io"
 	"strings"
 )
 
-func FaQualMerge(fit Puller[FaEntry], qit Puller[[]int64]) Iter[FqEntry] {
+func FaQualMerge(fit iter.Puller[FaEntry], qit iter.Puller[[]int64]) iter.Iter[FqEntry] {
 	var b strings.Builder
-	return &Iterator[FqEntry]{Iteratef: func(yield func(FqEntry) error) error {
+	return &iter.Iterator[FqEntry]{Iteratef: func(yield func(FqEntry) error) error {
 		for fa, e := fit.Next(); e != io.EOF; fa, e = fit.Next() {
 			if e != nil {
 				return e
@@ -47,9 +48,9 @@ func BuildQual(qual byte, length int) string {
 	return b.String()
 }
 
-func FaToFq(fit Iter[FaEntry], qual byte) *Iterator[FqEntry] {
+func FaToFq(fit iter.Iter[FaEntry], qual byte) *iter.Iterator[FqEntry] {
 	base := BuildQual(qual, 1024)
-	return &Iterator[FqEntry]{Iteratef: func(yield func(FqEntry) error) error {
+	return &iter.Iterator[FqEntry]{Iteratef: func(yield func(FqEntry) error) error {
 		return fit.Iterate(func(f FaEntry) error {
 			var err error
 			if len(f.Seq) <= 1024 {

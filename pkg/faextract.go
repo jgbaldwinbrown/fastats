@@ -2,9 +2,10 @@ package fastats
 
 import (
 	"fmt"
+	"github.com/jgbaldwinbrown/iter"
 )
 
-func CollectChrSpanMap(cit Iter[ChrSpan]) (map[string][]Span, error) {
+func CollectChrSpanMap(cit iter.Iter[ChrSpan]) (map[string][]Span, error) {
 	m := map[string][]Span{}
 	err := cit.Iterate(func(c ChrSpan) error {
 		m[c.Chr] = append(m[c.Chr], c.Span)
@@ -29,8 +30,8 @@ func ExtractOne(f FaEntry, s Span) (FaEntry, error) {
 	}, nil
 }
 
-func ExtractFasta(fit Iter[FaEntry], cit Iter[ChrSpan]) *Iterator[FaEntry] {
-	return &Iterator[FaEntry]{Iteratef: func(yield func(FaEntry) error) error {
+func ExtractFasta(fit iter.Iter[FaEntry], cit iter.Iter[ChrSpan]) *iter.Iterator[FaEntry] {
+	return &iter.Iterator[FaEntry]{Iteratef: func(yield func(FaEntry) error) error {
 		m, e := CollectChrSpanMap(cit)
 		if e != nil {
 			return e

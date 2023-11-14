@@ -7,6 +7,7 @@ import (
 	"math"
 	"io"
 	"bufio"
+	"github.com/jgbaldwinbrown/iter"
 )
 
 // q = -10 log_10(p)
@@ -73,7 +74,7 @@ func AppendScoreQuals(w io.Writer, scores []float64) error {
 	return nil
 }
 
-func MeanQual(it Iter[FqEntry]) (float64, error) {
+func MeanQual(it iter.Iter[FqEntry]) (float64, error) {
 	sum := 0.0
 	count := 0.0
 	var scores []float64
@@ -102,7 +103,7 @@ func Mean(fs ...float64) float64 {
 	return sum / count
 }
 
-func MeanReadQual(it Iter[FqEntry]) (float64, error) {
+func MeanReadQual(it iter.Iter[FqEntry]) (float64, error) {
 	sum := 0.0
 	count := 0.0
 	var scores []float64
@@ -126,7 +127,7 @@ func GrowLen[T any](s []T, n int) []T {
 	return s
 }
 
-func QualPerPos(it Iter[FqEntry]) ([]float64, error) {
+func QualPerPos(it iter.Iter[FqEntry]) ([]float64, error) {
 	var sum []float64
 	var count []float64
 	var scores []float64

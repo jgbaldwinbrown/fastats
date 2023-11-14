@@ -6,6 +6,7 @@ import (
 	"io"
 	"fmt"
 	"strings"
+	"github.com/jgbaldwinbrown/iter"
 )
 
 type VcfEntry[T any] struct {
@@ -127,8 +128,8 @@ func ParseSimpleVcfEntry(line []string) (VcfEntry[struct{}], error) {
 
 var commentRe = regexp.MustCompile(`^#`)
 
-func ParseSimpleVcf(r io.Reader) *Iterator[VcfEntry[struct{}]] {
-	return &Iterator[VcfEntry[struct{}]]{Iteratef: func(yield func(VcfEntry[struct{}]) error) error {
+func ParseSimpleVcf(r io.Reader) *iter.Iterator[VcfEntry[struct{}]] {
+	return &iter.Iterator[VcfEntry[struct{}]]{Iteratef: func(yield func(VcfEntry[struct{}]) error) error {
 		cr := csv.NewReader(r)
 		cr.LazyQuotes = true
 		cr.Comma = rune('\t')

@@ -9,6 +9,7 @@ import (
 	"sort"
 	"fmt"
 	"regexp"
+	"github.com/jgbaldwinbrown/iter"
 )
 
 // ID=SNP_1;Name=gap;subst_len=1;query_dir=1;query_sequence=3R;query_coord=12-12;query_bases=N;ref_bases=t;color=#42C042
@@ -54,7 +55,7 @@ type NucdiffData struct {
 	M map[ChrSpan]map[string]NucdiffAttr
 }
 
-func NucdiffReadGff(d *NucdiffData, crossname string, it Iter[GffEntry[NucdiffAttr]]) error {
+func NucdiffReadGff(d *NucdiffData, crossname string, it iter.Iter[GffEntry[NucdiffAttr]]) error {
 	d.CrossNames = append(d.CrossNames, crossname)
 	return it.Iterate(func(g GffEntry[NucdiffAttr]) error {
 		m, ok := d.M[g.ChrSpan]
@@ -100,7 +101,7 @@ func (f StringFormatter) Format(format string) string {
 // 	
 // }
 
-func NucdiffReadVcf(d *NucdiffVcfData, crossname string, it Iter[VcfEntry[struct{}]]) error {
+func NucdiffReadVcf(d *NucdiffVcfData, crossname string, it iter.Iter[VcfEntry[struct{}]]) error {
 	d.CrossNames = append(d.CrossNames, crossname)
 	return it.Iterate(func(v VcfEntry[struct{}]) error {
 		m, ok := d.M[v.ChrSpan]

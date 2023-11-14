@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"encoding/csv"
+	"github.com/jgbaldwinbrown/iter"
 )
 
 type Span struct {
@@ -75,8 +76,8 @@ func ParseBedEntry[FT any](line []string, fieldParse func([]string) (FT, error))
 	return b, e
 }
 
-func ParseBed[FT any](r io.Reader, fieldParse func([]string) (FT, error)) *Iterator[BedEntry[FT]] {
-	return &Iterator[BedEntry[FT]]{Iteratef: func(yield func(BedEntry[FT]) error) error {
+func ParseBed[FT any](r io.Reader, fieldParse func([]string) (FT, error)) *iter.Iterator[BedEntry[FT]] {
+	return &iter.Iterator[BedEntry[FT]]{Iteratef: func(yield func(BedEntry[FT]) error) error {
 		cr := csv.NewReader(r)
 		cr.LazyQuotes = true
 		cr.Comma = rune('\t')
@@ -98,7 +99,7 @@ func ParseBed[FT any](r io.Reader, fieldParse func([]string) (FT, error)) *Itera
 	}}
 }
 
-func ParseBedFlat(r io.Reader) *Iterator[BedEntry[[]string]] {
+func ParseBedFlat(r io.Reader) *iter.Iterator[BedEntry[[]string]] {
 	return ParseBed(r, func(fields []string) ([]string, error) {
 		out := make([]string, len(fields))
 		copy(out, fields)

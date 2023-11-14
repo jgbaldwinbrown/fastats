@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"strings"
 	"io"
+	"github.com/jgbaldwinbrown/iter"
 )
 
 type FaEntry struct {
@@ -58,11 +59,11 @@ func parseFasta(r io.Reader, yield func(f FaEntry) error) error {
 	return nil
 }
 
-func ParseFasta(r io.Reader) *Iterator[FaEntry] {
+func ParseFasta(r io.Reader) *iter.Iterator[FaEntry] {
 	it := func(yield func(FaEntry) error) error {
 		return parseFasta(r, yield)
 	}
-	return &Iterator[FaEntry]{Iteratef: it}
+	return &iter.Iterator[FaEntry]{Iteratef: it}
 }
 
 type FaLen struct {
@@ -74,13 +75,13 @@ func Chrlen(f FaEntry) FaLen {
 		return FaLen{f.Header, int64(len(f.Seq))}
 }
 
-func Chrlens(it Iter[FaEntry]) *Iterator[FaLen] {
+func Chrlens(it iter.Iter[FaEntry]) *iter.Iterator[FaLen] {
 	itf := func(yield func(FaLen) error) error {
 		return it.Iterate(func(f FaEntry) error {
 			return yield(Chrlen(f))
 		})
 	}
-	return &Iterator[FaLen]{Iteratef: itf}
+	return &iter.Iterator[FaLen]{Iteratef: itf}
 }
 
 func PrintFaLen(w io.Writer, l FaLen) error {

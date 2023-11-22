@@ -35,7 +35,7 @@ func ParseNucdiffAttr(in string) (NucdiffAttr, error) {
 	fields := nucdiffAttrRe.FindStringSubmatch(in)
 	var n NucdiffAttr
 	if len(fields) < 11 {
-		return n, fmt.Errorf("len(fields) %v < 11")
+		return n, fmt.Errorf("len(fields) %v < 11", len(fields))
 	}
 	_, e := Scan(fields[1:], &n.ID, &n.Name, &n.Len, &n.QueryDir, &n.QuerySeq, &n.QueryStart, &n.QueryEnd, &n.QueryBases, &n.RefBases, &n.Color)
 	if e != nil {

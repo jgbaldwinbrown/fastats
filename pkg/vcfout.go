@@ -76,7 +76,7 @@ func FormatSample[T Formatter, S ~[]T](format []string, sample S) (string, error
 	for i := 1; i < len(sample); i++ {
 		samp := sample[i]
 		form := format[i]
-		_, e := fmt.Fprintf(&b, ":", samp.Format(form))
+		_, e := fmt.Fprintf(&b, ":%v", samp.Format(form))
 		if e != nil { return "", e }
 	}
 

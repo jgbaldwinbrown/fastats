@@ -106,3 +106,20 @@ func ParseBedFlat(r io.Reader) *iter.Iterator[BedEntry[[]string]] {
 		return out, nil
 	})
 }
+
+func SpreadBed[FT any](it iter.Iter[BedEntry[FT]]) *iter.Iterator[BedEntry[FT]] {
+	return &iter.Iterator[BedEntry[FT]]{Iteratef: func(yield func(BedEntry[FT]) error) error {
+		return it.Iterate(func(b BedEntry[FT]) error {
+			for i := b.Start; i < b.End; i++ {
+				sub := b
+				sub.Start = i
+				sub.End = i+1
+				e := yield(sub)
+				if e != nil {
+					return e
+				}
+			}
+			return nil
+		})
+	}}
+}

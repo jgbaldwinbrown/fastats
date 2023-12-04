@@ -52,8 +52,8 @@ func WriteGC(w io.Writer, it iter.Iter[BedEntry[float64]]) (n int, err error) {
 }
 
 func RunGC() {
-	sizep := flag.Int("-size", 1, "Window size")
-	stepp := flag.Int("-step", 1, "Window step distance")
+	sizep := flag.Int("size", 1, "Window size")
+	stepp := flag.Int("step", 1, "Window step distance")
 
 	r := bufio.NewReader(os.Stdin)
 	w := bufio.NewWriter(os.Stdout)

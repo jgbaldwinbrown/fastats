@@ -26,7 +26,7 @@ func parseFasta(r io.Reader, yield func(f FaEntry) error) error {
 		if s.Err() != nil {
 			return s.Err()
 		}
-		if len(s.Text()) < 0 {
+		if len(s.Text()) < 1 {
 			continue
 		}
 

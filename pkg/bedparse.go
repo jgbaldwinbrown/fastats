@@ -32,6 +32,9 @@ func ScanOne(field string, ptr any) (n int, err error) {
 }
 
 func ScanOneDot(field string, ptr any) (n int, err error) {
+	if ptr == nil {
+		return 1, nil
+	}
 	n, e := ScanOne(field, ptr)
 	if e == nil {
 		return n, nil

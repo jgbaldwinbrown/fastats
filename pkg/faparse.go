@@ -31,6 +31,7 @@ func parseFasta(r io.Reader, yield func(f FaEntry) error) error {
 		}
 
 		if s.Text()[0] == '>' {
+			// fmt.Println("found header:", s.Text())
 			if started {
 				e := yield(FaEntry{Header: hdr, Seq: seq.String()})
 				if e != nil {

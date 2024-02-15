@@ -146,16 +146,6 @@ type NucdiffVcfData struct {
 	M map[ChrSpan]map[string]VcfEntry[struct{}]
 }
 
-func ChrSpanLess(i, j ChrSpan) bool {
-	if i.Chr < j.Chr {
-		return true
-	}
-	if i.Chr > j.Chr {
-		return false
-	}
-	return i.Start < j.Start
-}
-
 func GetSortedChrSpans(d *NucdiffVcfData) []ChrSpan {
 	cspans := make([]ChrSpan, 0, len(d.M))
 	for k, _ := range d.M {

@@ -28,7 +28,7 @@ func CheckAndPopMulti[T any](win ChrSpan, d *Deque[BedEntry[T]]) {
 	for d.Len() > 0 {
 		next := d.Get(0)
 		if FullyLeftOf(next.ChrSpan, win) {
-			log.Printf("popping %v; win %v\n", next, win)
+			// log.Printf("popping %v; win %v\n", next, win)
 			d.PopFront()
 		} else {
 			return
@@ -142,9 +142,9 @@ func MeanWindowCounts(it iter.Iter[BedEntry[float64]], winsize, winstep int) (*i
 	return &iter.Iterator[BedEntry[float64]]{Iteratef: func(yield func(BedEntry[float64]) error) error {
 		wins := WindowSortedBed[float64](it, winsize, winstep)
 		return wins.Iterate(func(win BedEntry[[]BedEntry[float64]]) error {
-			if len(win.Fields) < 1 {
-				log.Printf("len(win.Fields) < 1; win %v\n", win)
-			}
+			// if len(win.Fields) < 1 {
+			// 	log.Printf("len(win.Fields) < 1; win %v\n", win)
+			// }
 			return yield(BedEntry[float64]{win.ChrSpan, MeanBedPerBp(win.Fields)})
 		})
 	}}
@@ -222,6 +222,29 @@ func FlatToFloatBed(it iter.Iter[BedEntry[[]string]]) *iter.Iterator[BedEntry[fl
 	}}
 }
 
+func BedSortWin(r io.Reader, w io.Writer, f BedSortWinFlags) error {
+	// log.Print("started flat to floatbed")
+	it := FlatToFloatBed(ParseBedFlat(r))
+	// log.Print("finished flat to floatbed")
+
+	if !f.Sorted {
+		// log.Print("sorting")
+		bed, e := SortedBed[float64](it)
+		if e != nil {
+			return e
+		}
+		it = iter.SliceIter[BedEntry[float64]](bed)
+		// log.Print("sorted")
+	}
+
+	// log.Print("starting meanwindowcounts")
+	wins := MeanWindowCounts(it, f.Winsize, f.Winstep)
+	if _, e := WriteFloatBed(w, wins); e != nil {
+		return e
+	}
+	return nil
+}
+
 func RunBedSortWin() {
 	var f BedSortWinFlags
 	flag.BoolVar(&f.Sorted, "sorted", false, "bed input already sorted")
@@ -238,23 +261,7 @@ func RunBedSortWin() {
 		}
 	}()
 
-	// log.Print("started flat to floatbed")
-	it := FlatToFloatBed(ParseBedFlat(stdin))
-	// log.Print("finished flat to floatbed")
-
-	if !f.Sorted {
-		// log.Print("sorting")
-		bed, e := SortedBed[float64](it)
-		if e != nil {
-			log.Fatal(e)
-		}
-		it = iter.SliceIter[BedEntry[float64]](bed)
-		// log.Print("sorted")
-	}
-
-	// log.Print("starting meanwindowcounts")
-	wins := MeanWindowCounts(it, f.Winsize, f.Winstep)
-	if _, e := WriteFloatBed(stdout, wins); e != nil {
+	if e := BedSortWin(stdin, stdout, f); e != nil {
 		log.Fatal(e)
 	}
 }

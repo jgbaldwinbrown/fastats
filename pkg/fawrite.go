@@ -8,7 +8,7 @@ import (
 
 func WriteFaEntries(w io.Writer, fs ...FaEntry) error {
 	for _, f := range fs {
-		if _, e := fmt.Printf(">%s\n%s\n", f.Header, f.Seq); e != nil {
+		if _, e := fmt.Fprintf(w, ">%s\n%s\n", f.Header, f.Seq); e != nil {
 			return e
 		}
 	}

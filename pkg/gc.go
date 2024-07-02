@@ -6,7 +6,7 @@ import (
 	"flag"
 	"bufio"
 	"os"
-	"github.com/jgbaldwinbrown/iter"
+	"iter"
 )
 
 func GCFrac(seq string) float64 {
@@ -33,22 +33,29 @@ func GCFrac(seq string) float64 {
 	return gcCount / bpCount
 }
 
-func GCIter(views iter.Iter[BedEntry[string]]) *iter.Iterator[BedEntry[float64]] {
-	return &iter.Iterator[BedEntry[float64]]{Iteratef: func(yield func(BedEntry[float64]) error) error {
-		return views.Iterate(func(view BedEntry[string]) error {
-			frac := GCFrac(view.Fields)
-			return yield(BedEntry[float64]{ChrSpan: view.ChrSpan, Fields: frac})
-		})
-	}}
+func GCIter[B BedEnter[string]](views iter.Seq2[B, error]) iter.Seq2[BedEntry[float64], error] {
+	return func(yield func(BedEntry[float64], error) bool) {
+		for view, e := range views {
+			frac := GCFrac(view.BedFields())
+			if ok := yield(BedEntry[float64]{ChrSpan: toChrSpan(view), Fields: frac}, e); !ok {
+				return
+			}
+		}
+	}
 }
 
-func WriteGC(w io.Writer, it iter.Iter[BedEntry[float64]]) (n int, err error) {
-	err = it.Iterate(func(b BedEntry[float64]) error {
-		nwritten, e := fmt.Fprintf(w, "%v\t%v\t%v\t%v\n", b.Chr, b.Start, b.End, b.Fields)
+func WriteGC[B BedEnter[float64]](w io.Writer, it iter.Seq2[B, error]) (n int, err error) {
+	for b, e := range it {
+		if e != nil {
+			return n, e
+		}
+		nwritten, e := fmt.Fprintf(w, "%v\t%v\t%v\t%v\n", b.SpanChr(), b.SpanStart(), b.SpanEnd(), b.BedFields())
 		n += nwritten
-		return e
-	})
-	return n, err
+		if e != nil {
+			return n, e
+		}
+	}
+	return n, nil
 }
 
 func RunGC() {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"encoding/csv"
 	"io"
-	"github.com/jgbaldwinbrown/iter"
+	"iter"
 )
 
 func ParseVcfMainFields[T any](v *VcfEntry[T], line []string) error {
@@ -41,8 +41,8 @@ func ParseVcfEntry[T any](line []string, f func(line []string) (T, error)) (VcfE
 	return v, nil
 }
 
-func ParseVcf[T any](r io.Reader, f func(line []string) (T, error)) *iter.Iterator[VcfEntry[T]] {
-	return &iter.Iterator[VcfEntry[T]]{Iteratef: func(yield func(VcfEntry[T]) error) error {
+func ParseVcf[T any](r io.Reader, f func(line []string) (T, error)) iter.Seq2[VcfEntry[T], error] {
+	return func(yield func(VcfEntry[T], error) bool) {
 		cr := csv.NewReader(r)
 		cr.LazyQuotes = true
 		cr.Comma = rune('\t')
@@ -58,16 +58,10 @@ func ParseVcf[T any](r io.Reader, f func(line []string) (T, error)) *iter.Iterat
 			}
 
 			b, e := ParseVcfEntry(l, f)
-			if e != nil {
-				return e
-			}
-			e = yield(b)
-			if e != nil {
-				return e
+			if ok := yield(b, e); !ok {
+				return
 			}
 		}
-
-		return nil
-	}}
+	}
 }
 

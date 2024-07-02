@@ -5,7 +5,7 @@ import (
 	"math"
 	"os"
 	"golang.org/x/exp/slices"
-	"github.com/jgbaldwinbrown/iter"
+	"iter"
 )
 
 type FaStats struct {
@@ -20,8 +20,8 @@ type FaStats struct {
 	BpInN90 int64
 }
 
-func RevsortedLens(it iter.Iter[FaLen]) ([]FaLen, error) {
-	out, err := iter.Collect(it)
+func RevsortedLens(it iter.Seq2[FaLen, error]) ([]FaLen, error) {
+	out, err := CollectErr(it)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func N90Stats(lens []FaLen, s *FaStats) {
 	NStats(lens, s.Bp, 0.9, &s.N90, &s.L90, &s.BpInN90)
 }
 
-func Stats(it iter.Iter[FaLen]) (FaStats, error) {
+func Stats(it iter.Seq2[FaLen, error]) (FaStats, error) {
 	lens, err := RevsortedLens(it)
 	if err != nil {
 		return FaStats{}, err

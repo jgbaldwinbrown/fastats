@@ -1,17 +1,25 @@
 package fastats
 
 import (
+	"log"
 	"encoding/json"
 	"os"
 	"fmt"
 	"bufio"
 	"io"
-	"github.com/jgbaldwinbrown/iter"
+	"iter"
 )
 
 type FqEntry struct {
 	FaEntry
 	Qual string
+}
+
+func (f FqEntry) FqQual() string { return f.Qual }
+
+type FqEnter interface {
+	FaEnter
+	FqQual() string
 }
 
 func ScanFour(dest []string, s *bufio.Scanner) ([]string, error) {
@@ -29,48 +37,54 @@ func ScanFour(dest []string, s *bufio.Scanner) ([]string, error) {
 	return dest, nil
 }
 
-func parseFastq(r io.Reader, yield func(FqEntry) error) error {
+func parseFastq(r io.Reader, yield func(FqEntry, error) bool) {
 	s := bufio.NewScanner(r)
 	s.Buffer([]byte{}, 1e12)
 	var lines []string
 	for lines, err := ScanFour(lines, s); err != io.EOF; lines, err = ScanFour(lines, s) {
 		if err != nil {
-			return err
+			if ok := yield(FqEntry{}, err); !ok {
+				return
+			}
 		}
 		if len(lines[0]) < 1 {
-			return fmt.Errorf("parseFastq: empty header line")
+			if ok := yield(FqEntry{}, fmt.Errorf("parseFastq: empty header line")); !ok {
+				return
+			}
 		}
-		err = yield(FqEntry{FaEntry: FaEntry{Header: lines[0][1:], Seq: lines[1]}, Qual: lines[3]})
-		if err != nil {
-			return err
+		if ok := yield(FqEntry{FaEntry: FaEntry{Header: lines[0][1:], Seq: lines[1]}, Qual: lines[3]}, nil); !ok {
+			return
 		}
 	}
-	return nil
 }
 
-func ParseFastq(r io.Reader) *iter.Iterator[FqEntry] {
-	return &iter.Iterator[FqEntry]{Iteratef: func(yield func(FqEntry) error) error {
-		return parseFastq(r, yield)
-	}}
+func ParseFastq(r io.Reader) iter.Seq2[FqEntry, error] {
+	return func(yield func(FqEntry, error) bool) {
+		parseFastq(r, yield)
+	}
 }
 
-func FqChrlens(it iter.Iter[FqEntry]) *iter.Iterator[FaLen] {
-	return &iter.Iterator[FaLen]{Iteratef: func(yield func(FaLen) error) error {
-		return it.Iterate(func (f FqEntry) error {
-			falen := Chrlen(f.FaEntry)
-			return yield(falen)
-		})
-	}}
+func FqChrlens[F FqEnter](it iter.Seq2[F, error]) iter.Seq2[FaLen, error] {
+	return func(yield func(FaLen, error) bool) {
+		for f, e := range it {
+			falen := Chrlen(f)
+			if ok := yield(falen, e); !ok {
+				return
+			}
+		}
+	}
 }
 
 func FullFqChrlens() {
 	lens := FqChrlens(ParseFastq(os.Stdin))
 
-	err := lens.Iterate(func(l FaLen) error {
-		return PrintFaLen(os.Stdout, l)
-	})
-	if err != nil {
-		panic(err)
+	for l, e := range lens {
+		if e != nil {
+			log.Fatal(e)
+		}
+		if e := PrintFaLen(os.Stdout, l); e != nil {
+			log.Fatal(e)
+		}
 	}
 }
 

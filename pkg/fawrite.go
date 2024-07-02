@@ -2,21 +2,27 @@ package fastats
 
 import (
 	"io"
-	"github.com/jgbaldwinbrown/iter"
+	"iter"
 	"fmt"
 )
 
-func WriteFaEntries(w io.Writer, fs ...FaEntry) error {
+func WriteFaEntries[F FaEnter](w io.Writer, fs ...F) error {
 	for _, f := range fs {
-		if _, e := fmt.Fprintf(w, ">%s\n%s\n", f.Header, f.Seq); e != nil {
+		if _, e := fmt.Fprintf(w, ">%s\n%s\n", f.FaHeader(), f.FaSeq()); e != nil {
 			return e
 		}
 	}
 	return nil
 }
 
-func WriteFa(w io.Writer, it iter.Iter[FaEntry]) error {
-	return it.Iterate(func(f FaEntry) error {
-		return WriteFaEntries(w, f)
-	})
+func WriteFa[F FaEnter](w io.Writer, it iter.Seq2[F, error]) error {
+	for f, e := range it {
+		if e != nil {
+			return e
+		}
+		if e := WriteFaEntries(w, f); e != nil {
+			return e
+		}
+	}
+	return nil
 }

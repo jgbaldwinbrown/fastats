@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"io"
 	"encoding/csv"
-	"github.com/jgbaldwinbrown/iter"
+	"iter"
 )
 
-type GffEntry[AttT any] struct {
+type GffHead struct {
 	ChrSpan
 	Source string
 	Type string
@@ -17,7 +17,39 @@ type GffEntry[AttT any] struct {
 	Strand byte
 	Phase int
 	HasPhase bool
+}
+
+type GffHeader interface {
+	ChrSpanner
+	GffSource() string
+	GffType() string
+	GffScore() float64
+	GffHasScore() bool
+	GffStrand() byte
+	GffPhase() int
+	GffHasPhase() bool
+}
+
+func (g GffHead) GffSource() string { return g.Source }
+func (g GffHead) GffType() string { return g.Type }
+func (g GffHead) GffScore() float64 { return g.Score }
+func (g GffHead) GffHasScore() bool { return g.HasScore }
+func (g GffHead) GffStrand() byte { return g.Strand }
+func (g GffHead) GffPhase() int { return g.Phase }
+func (g GffHead) GffHasPhase() bool { return g.HasPhase }
+
+type GffEntry[AttT any] struct {
+	GffHead
 	Attributes AttT
+}
+
+type GffEnter[AttT any] interface {
+	GffHeader
+	GffAttributes() AttT
+}
+
+func (g GffEntry[T]) GffAttributes() T {
+	return g.Attributes
 }
 
 func ParseGffEntry[AT any](line []string, attributeParse func(string) (AT, error)) (GffEntry[AT], error) {
@@ -53,8 +85,8 @@ func ParseGffEntry[AT any](line []string, attributeParse func(string) (AT, error
 	return g, e
 }
 
-func ParseGff[AT any](r io.Reader, attributeParse func(string) (AT, error)) *iter.Iterator[GffEntry[AT]] {
-	return &iter.Iterator[GffEntry[AT]]{Iteratef: func(yield func(GffEntry[AT]) error) error {
+func ParseGff[AT any](r io.Reader, attributeParse func(string) (AT, error)) iter.Seq2[GffEntry[AT], error] {
+	return func(yield func(GffEntry[AT], error) bool) {
 		cr := csv.NewReader(r)
 		cr.LazyQuotes = true
 		cr.Comma = rune('\t')
@@ -63,17 +95,11 @@ func ParseGff[AT any](r io.Reader, attributeParse func(string) (AT, error)) *ite
 
 		for l, e := cr.Read(); e != io.EOF; l, e = cr.Read() {
 			b, e := ParseGffEntry(l, attributeParse)
-			if e != nil {
-				return e
-			}
-			e = yield(b)
-			if e != nil {
-				return e
+			if ok := yield(b, e); !ok {
+				return
 			}
 		}
-
-		return nil
-	}}
+	}
 }
 
 type AttributePair struct {
@@ -92,6 +118,6 @@ func ParseAttributePairs(field string) ([]AttributePair, error) {
 	return out, nil
 }
 
-func ParseGffFlat(r io.Reader) *iter.Iterator[GffEntry[[]AttributePair]] {
+func ParseGffFlat(r io.Reader) iter.Seq2[GffEntry[[]AttributePair], error] {
 	return ParseGff(r, ParseAttributePairs)
 }

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 	"encoding/csv"
-	"github.com/jgbaldwinbrown/iter"
+	"iter"
 )
 
 type Span struct {
@@ -12,14 +12,45 @@ type Span struct {
 	End int64
 }
 
+func (s Span) SpanStart() int64 {
+	return s.Start
+}
+
+func (s Span) SpanEnd() int64 {
+	return s.End
+}
+
+type Spanner interface {
+	SpanStart() int64
+	SpanEnd() int64
+}
+
 type ChrSpan struct {
 	Chr string
 	Span
 }
 
+func (c ChrSpan) SpanChr() string {
+	return c.Chr
+}
+
+type ChrSpanner interface {
+	Spanner
+	SpanChr() string
+}
+
 type BedEntry[FieldsT any] struct {
 	ChrSpan
 	Fields FieldsT
+}
+
+func (b BedEntry[T]) BedFields() T {
+	return b.Fields
+}
+
+type BedEnter[FieldsT any] interface {
+	ChrSpanner
+	BedFields() FieldsT
 }
 
 func ScanOne(field string, ptr any) (n int, err error) {
@@ -79,8 +110,8 @@ func ParseBedEntry[FT any](line []string, fieldParse func([]string) (FT, error))
 	return b, e
 }
 
-func ParseBed[FT any](r io.Reader, fieldParse func([]string) (FT, error)) *iter.Iterator[BedEntry[FT]] {
-	return &iter.Iterator[BedEntry[FT]]{Iteratef: func(yield func(BedEntry[FT]) error) error {
+func ParseBed[FT any](r io.Reader, fieldParse func([]string) (FT, error)) iter.Seq2[BedEntry[FT], error] {
+	return func(yield func(BedEntry[FT], error) bool) {
 		cr := csv.NewReader(r)
 		cr.LazyQuotes = true
 		cr.Comma = rune('\t')
@@ -89,20 +120,15 @@ func ParseBed[FT any](r io.Reader, fieldParse func([]string) (FT, error)) *iter.
 
 		for l, e := cr.Read(); e != io.EOF; l, e = cr.Read() {
 			b, e := ParseBedEntry(l, fieldParse)
-			if e != nil {
-				return e
-			}
-			e = yield(b)
-			if e != nil {
-				return e
+			ok := yield(b, e)
+			if e != nil || !ok {
+				return
 			}
 		}
-
-		return nil
-	}}
+	}
 }
 
-func ParseBedFlat(r io.Reader) *iter.Iterator[BedEntry[[]string]] {
+func ParseBedFlat(r io.Reader) iter.Seq2[BedEntry[[]string], error] {
 	return ParseBed(r, func(fields []string) ([]string, error) {
 		out := make([]string, len(fields))
 		copy(out, fields)
@@ -110,19 +136,19 @@ func ParseBedFlat(r io.Reader) *iter.Iterator[BedEntry[[]string]] {
 	})
 }
 
-func SpreadBed[FT any](it iter.Iter[BedEntry[FT]]) *iter.Iterator[BedEntry[FT]] {
-	return &iter.Iterator[BedEntry[FT]]{Iteratef: func(yield func(BedEntry[FT]) error) error {
-		return it.Iterate(func(b BedEntry[FT]) error {
-			for i := b.Start; i < b.End; i++ {
-				sub := b
+func SpreadBed[B BedEnter[T], T any](it iter.Seq2[B, error]) func(func(BedEntry[T], error) bool) {
+	return func(yield func(BedEntry[T], error) bool) {
+		it(func(b B, e error) bool {
+			for i := b.SpanStart(); i < b.SpanEnd(); i++ {
+				sub := BedEntry[T]{}
+				sub.Chr = b.SpanChr()
 				sub.Start = i
 				sub.End = i+1
-				e := yield(sub)
-				if e != nil {
-					return e
-				}
+				sub.Fields = b.BedFields()
+				ok := yield(sub, e)
+				return ok && e == nil
 			}
-			return nil
+			return true
 		})
-	}}
+	}
 }

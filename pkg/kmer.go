@@ -5,7 +5,7 @@ import (
 	"os"
 	"flag"
 	"bufio"
-	"github.com/jgbaldwinbrown/iter"
+	"iter"
 )
 
 func AddKmers(kmap map[string]int64, k int, seq string) {
@@ -14,13 +14,15 @@ func AddKmers(kmap map[string]int64, k int, seq string) {
 	}
 }
 
-func CountKmers(it iter.Iter[FaEntry], k int) (map[string]int64, error) {
+func CountKmers[F FaEnter](it iter.Seq2[F, error], k int) (map[string]int64, error) {
 	m := map[string]int64{}
-	err := it.Iterate(func(f FaEntry) error {
-		AddKmers(m, k, f.Seq)
-		return nil
-	})
-	return m, err
+	for f, err := range it {
+		if err != nil {
+			return m, err
+		}
+		AddKmers(m, k, f.FaSeq())
+	}
+	return m, nil
 }
 
 type Kmer struct {
@@ -28,28 +30,23 @@ type Kmer struct {
 	Count int64
 }
 
-func KmerIter(m map[string]int64) *iter.Iterator[Kmer] {
-	return &iter.Iterator[Kmer]{Iteratef: func(yield func(Kmer) error) error {
+func KmerIter(m map[string]int64) iter.Seq[Kmer] {
+	return func(yield func(Kmer) bool) {
 		for seq, count := range m {
-			if e := yield(Kmer{seq, count}); e != nil {
-				return e
+			if ok := yield(Kmer{seq, count}); !ok {
+				return
 			}
 		}
-		return nil
-	}}
+	}
 }
 
-func KmerHist(it iter.Iter[Kmer]) ([]int64, error) {
+func KmerHist(it iter.Seq[Kmer]) []int64 {
 	var out []int64
-	e := it.Iterate(func(k Kmer) error {
+	for k := range it {
 		out = GrowLen(out, int(k.Count) + 1)
 		out[k.Count]++
-		return nil
-	})
-	if e != nil {
-		return nil, e
 	}
-	return out, nil
+	return out
 }
 
 func FullCountKmers() {
@@ -86,7 +83,7 @@ func FullKmerHist() {
 		panic(e)
 	}
 
-	hist, e := KmerHist(KmerIter(m))
+	hist := KmerHist(KmerIter(m))
 	if e != nil {
 		panic(e)
 	}

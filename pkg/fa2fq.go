@@ -1,37 +1,46 @@
 package fastats
 
 import (
-	"github.com/jgbaldwinbrown/iter"
-	"io"
+	"iter"
 	"strings"
 )
 
-func FaQualMerge(fit iter.Puller[FaEntry], qit iter.Puller[[]int64]) iter.Iter[FqEntry] {
+func toFaEntry[F FaEnter](f F) FaEntry {
+	return FaEntry{Header: f.FaHeader(), Seq: f.FaSeq()}
+}
+
+func FaQualMerge[F FaEnter](fit iter.Seq2[F, error], qit iter.Seq2[[]int64, error]) iter.Seq2[FqEntry, error] {
+	qp, cancel := iter.Pull2(qit)
+	defer cancel()
 	var b strings.Builder
-	return &iter.Iterator[FqEntry]{Iteratef: func(yield func(FqEntry) error) error {
-		for fa, e := fit.Next(); e != io.EOF; fa, e = fit.Next() {
+	return func(yield func(FqEntry, error) bool) {
+		for fa, e := range fit {
 			if e != nil {
-				return e
+				if ok := yield(FqEntry{}, e); !ok {
+					return
+				}
 			}
 
 			var q []int64
-			q, e = qit.Next()
+			var ok bool
+			q, e, ok = qp()
+			if !ok {
+				return
+			}
 			if e != nil {
-				return e
+				if ok := yield(FqEntry{}, e); !ok {
+					return
+				}
 			}
 
 			b.Reset()
-			if e = AppendQualsToAscii(&b, q); e != nil {
-				return e
-			}
+			e = AppendQualsToAscii(&b, q)
 
-			e = yield(FqEntry{FaEntry: fa, Qual: b.String()})
-			if e != nil {
-				return e
+			if ok := yield(FqEntry{FaEntry: toFaEntry(fa), Qual: b.String()}, e); !ok {
+				return
 			}
 		}
-		return nil
-	}}
+	}
 }
 
 func Must(err error) {
@@ -48,17 +57,24 @@ func BuildQual(qual byte, length int) string {
 	return b.String()
 }
 
-func FaToFq(fit iter.Iter[FaEntry], qual byte) *iter.Iterator[FqEntry] {
+func FaToFq[FA FaEnter](fit iter.Seq2[FA, error], qual byte) iter.Seq2[FqEntry, error] {
 	base := BuildQual(qual, 1024)
-	return &iter.Iterator[FqEntry]{Iteratef: func(yield func(FqEntry) error) error {
-		return fit.Iterate(func(f FaEntry) error {
-			var err error
-			if len(f.Seq) <= 1024 {
-				err = yield(FqEntry{FaEntry: f, Qual: base[:len(f.Seq)]})
-			} else {
-				err = yield(FqEntry{FaEntry: f, Qual: BuildQual(qual, len(f.Seq))})
+	return func(yield func(FqEntry, error) bool) {
+		for f, e := range fit {
+			if e != nil {
+				if ok := yield(FqEntry{}, e); !ok {
+					return
+				}
 			}
-			return err
-		})
-	}}
+			if len(f.FaSeq()) <= 1024 {
+				if ok := yield(FqEntry{FaEntry: toFaEntry(f), Qual: base[:len(f.FaSeq())]}, nil); !ok {
+					return
+				}
+			} else {
+				if ok := yield(FqEntry{FaEntry: toFaEntry(f), Qual: BuildQual(qual, len(f.FaSeq()))}, nil); !ok {
+					return
+				}
+			}
+		}
+	}
 }

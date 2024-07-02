@@ -6,17 +6,45 @@ import (
 	"io"
 	"fmt"
 	"strings"
-	"github.com/jgbaldwinbrown/iter"
+	"iter"
 )
 
-type VcfEntry[T any] struct {
+type VcfHead struct {
 	ChrSpan
 	ID string
 	Ref string
 	Alts []string
 	Qual int
 	Filter string
+}
+
+func (v VcfHead) VcfID() string { return v.ID }
+func (v VcfHead) VcfRef() string { return v.Ref }
+func (v VcfHead) VcfAlts() []string { return v.Alts }
+func (v VcfHead) VcfQual() int { return v.Qual }
+func (v VcfHead) VcfFilter() string { return v.Filter }
+
+type VcfHeader interface {
+	ChrSpanner
+	VcfID() string
+	VcfRef() string
+	VcfAlts() []string
+	VcfQual() int
+	VcfFilter() string
+}
+
+type VcfEntry[T any] struct {
+	VcfHead
 	InfoAndSamples T
+}
+
+func (v VcfEntry[T]) VcfInfoAndSamples() T {
+	return v.InfoAndSamples
+}
+
+type VcfEnter[T any] interface {
+	VcfHeader
+	VcfInfoAndSamples() T
 }
 
 type InfoPair[T any] struct {
@@ -128,8 +156,8 @@ func ParseSimpleVcfEntry(line []string) (VcfEntry[struct{}], error) {
 
 var commentRe = regexp.MustCompile(`^#`)
 
-func ParseSimpleVcf(r io.Reader) *iter.Iterator[VcfEntry[struct{}]] {
-	return &iter.Iterator[VcfEntry[struct{}]]{Iteratef: func(yield func(VcfEntry[struct{}]) error) error {
+func ParseSimpleVcf(r io.Reader) iter.Seq2[VcfEntry[struct{}], error] {
+	return func(yield func(VcfEntry[struct{}], error) bool) {
 		cr := csv.NewReader(r)
 		cr.LazyQuotes = true
 		cr.Comma = rune('\t')
@@ -145,16 +173,10 @@ func ParseSimpleVcf(r io.Reader) *iter.Iterator[VcfEntry[struct{}]] {
 			}
 
 			b, e := ParseSimpleVcfEntry(l)
-			if e != nil {
-				return e
-			}
-			e = yield(b)
-			if e != nil {
-				return e
+			if ok := yield(b, e); !ok {
+				return
 			}
 		}
-
-		return nil
-	}}
+	}
 }
 

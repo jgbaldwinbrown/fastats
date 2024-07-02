@@ -1,46 +1,53 @@
 package fastats
 
 import (
-	"github.com/jgbaldwinbrown/iter"
+	"iter"
 )
 
-func Wins(start, end, size, step int64) *iter.Iterator[Span] {
-	return &iter.Iterator[Span]{Iteratef: func(yield func(Span) error) error {
+func Wins(start, end, size, step int64) iter.Seq[Span] {
+	return func(yield func(Span) bool) {
 		var i int64
 		for i = start; i < end; i += step {
 			winend := i + size
 			if winend > end {
 				winend = end
 			}
-			e := yield(Span{i, winend})
-			if e != nil {
-				return e
+			if ok := yield(Span{i, winend}); !ok {
+				return
 			}
 		}
-		return nil
-	}}
+	}
 }
 
-func FaEntryWins(fe FaEntry, size int64, step int64) *iter.Iterator[BedEntry[string]] {
-	return &iter.Iterator[BedEntry[string]]{Iteratef: func(yield func(BedEntry[string]) error) error {
-		wins := Wins(0, int64(len(fe.Seq)), size, step)
-		return wins.Iterate(func(s Span) error {
+func FaEntryWins[F FaEnter](fe F, size int64, step int64) iter.Seq[BedEntry[string]] {
+	return func(yield func(BedEntry[string]) bool) {
+		wins := Wins(0, int64(len(fe.FaSeq())), size, step)
+		for s := range wins {
 			fv := BedEntry[string]{
-				ChrSpan: ChrSpan{fe.Header, Span{s.Start, s.End}},
-				Fields: fe.Seq[s.Start : s.End],
+				ChrSpan: ChrSpan{fe.FaHeader(), Span{s.Start, s.End}},
+				Fields: fe.FaSeq()[s.Start : s.End],
 			}
-			return yield(fv)
-		})
-	}}
+			if ok := yield(fv); !ok {
+				return
+			}
+		}
+	}
 }
 
-func FaWins(fa iter.Iter[FaEntry], size int64, step int64) *iter.Iterator[BedEntry[string]] {
-	return &iter.Iterator[BedEntry[string]]{Iteratef: func(yield func(BedEntry[string]) error) error {
-		return fa.Iterate(func(fe FaEntry) error {
+func FaWins[F FaEnter](fa iter.Seq2[F, error], size int64, step int64) iter.Seq2[BedEntry[string], error] {
+	return func(yield func(BedEntry[string], error) bool) {
+		for fe, err := range fa {
+			if err != nil {
+				if ok := yield(BedEntry[string]{}, err); !ok {
+					return
+				}
+			}
 			wins := FaEntryWins(fe, size, step)
-			return wins.Iterate(func(view BedEntry[string]) error {
-				return yield(view)
-			})
-		})
-	}}
+			for view := range wins {
+				if ok := yield(view, nil); !ok {
+					return
+				}
+			}
+		}
+	}
 }

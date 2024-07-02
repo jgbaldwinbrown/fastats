@@ -1,12 +1,13 @@
 package fastats
 
 import (
+	"log"
 	"fmt"
 	"os"
 	"bufio"
 	"strings"
 	"io"
-	"github.com/jgbaldwinbrown/iter"
+	"iter"
 )
 
 type FaEntry struct {
@@ -14,7 +15,15 @@ type FaEntry struct {
 	Seq string
 }
 
-func parseFasta(r io.Reader, yield func(f FaEntry) error) error {
+func (f FaEntry) FaHeader() string { return f.Header }
+func (f FaEntry) FaSeq() string { return f.Seq }
+
+type FaEnter interface {
+	FaHeader() string
+	FaSeq() string
+}
+
+func parseFasta(r io.Reader, yield func(FaEntry, error) bool) {
 	s := bufio.NewScanner(r)
 	s.Buffer([]byte{}, 1e12)
 
@@ -24,7 +33,9 @@ func parseFasta(r io.Reader, yield func(f FaEntry) error) error {
 
 	for s.Scan() {
 		if s.Err() != nil {
-			return s.Err()
+			if ok := yield(FaEntry{}, s.Err()); !ok {
+				return
+			}
 		}
 		if len(s.Text()) < 1 {
 			continue
@@ -33,9 +44,8 @@ func parseFasta(r io.Reader, yield func(f FaEntry) error) error {
 		if s.Text()[0] == '>' {
 			// fmt.Println("found header:", s.Text())
 			if started {
-				e := yield(FaEntry{Header: hdr, Seq: seq.String()})
-				if e != nil {
-					return e
+				if ok := yield(FaEntry{Header: hdr, Seq: seq.String()}, nil); !ok {
+					return
 				}
 			}
 			hdr = s.Text()[1:]
@@ -46,25 +56,21 @@ func parseFasta(r io.Reader, yield func(f FaEntry) error) error {
 
 		_, e := seq.WriteString(s.Text())
 		if e != nil {
-			return e
+			if ok := yield(FaEntry{}, e); !ok {
+				return
+			}
 		}
 	}
 
 	if started {
-		e := yield(FaEntry{Header: hdr, Seq: seq.String()})
-		if e != nil {
-			return e
-		}
+		yield(FaEntry{Header: hdr, Seq: seq.String()}, nil)
 	}
-
-	return nil
 }
 
-func ParseFasta(r io.Reader) *iter.Iterator[FaEntry] {
-	it := func(yield func(FaEntry) error) error {
-		return parseFasta(r, yield)
+func ParseFasta(r io.Reader) iter.Seq2[FaEntry, error] {
+	return func(yield func(FaEntry, error) bool) {
+		parseFasta(r, yield)
 	}
-	return &iter.Iterator[FaEntry]{Iteratef: it}
 }
 
 type FaLen struct {
@@ -72,17 +78,18 @@ type FaLen struct {
 	Len int64
 }
 
-func Chrlen(f FaEntry) FaLen {
-		return FaLen{f.Header, int64(len(f.Seq))}
+func Chrlen[F FaEnter](f F) FaLen {
+		return FaLen{f.FaHeader(), int64(len(f.FaSeq()))}
 }
 
-func Chrlens(it iter.Iter[FaEntry]) *iter.Iterator[FaLen] {
-	itf := func(yield func(FaLen) error) error {
-		return it.Iterate(func(f FaEntry) error {
-			return yield(Chrlen(f))
-		})
+func Chrlens[F FaEnter](it iter.Seq2[F, error]) iter.Seq2[FaLen, error] {
+	return func(yield func(FaLen, error) bool) {
+		for f, e := range it {
+			if ok := yield(Chrlen(f), e); !ok {
+				return
+			}
+		}
 	}
-	return &iter.Iterator[FaLen]{Iteratef: itf}
 }
 
 func PrintFaLen(w io.Writer, l FaLen) error {
@@ -93,10 +100,12 @@ func PrintFaLen(w io.Writer, l FaLen) error {
 func FullChrlens() {
 	fa := ParseFasta(os.Stdin)
 	lens := Chrlens(fa)
-	err := lens.Iterate(func(l FaLen) error {
-		return PrintFaLen(os.Stdout, l)
-	})
-	if err != nil {
-		panic(err)
+	for l, e := range lens {
+		if e != nil {
+			log.Fatal(e)
+		}
+		if e := PrintFaLen(os.Stdout, l); e != nil {
+			log.Fatal(e)
+		}
 	}
 }

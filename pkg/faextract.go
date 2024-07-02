@@ -2,17 +2,16 @@ package fastats
 
 import (
 	"fmt"
-	"github.com/jgbaldwinbrown/iter"
+	"iter"
 )
 
-func CollectChrSpanMap(cit iter.Iter[ChrSpan]) (map[string][]Span, error) {
+func CollectChrSpanMap[C ChrSpanner](cit iter.Seq2[C, error]) (map[string][]Span, error) {
 	m := map[string][]Span{}
-	err := cit.Iterate(func(c ChrSpan) error {
-		m[c.Chr] = append(m[c.Chr], c.Span)
-		return nil
-	})
-	if err != nil {
-		return nil, err
+	for c, err := range cit {
+		if err != nil {
+			return nil, err
+		}
+		m[c.SpanChr()] = append(m[c.SpanChr()], Span{c.SpanStart(), c.SpanEnd()})
 	}
 	return m, nil
 }
@@ -30,26 +29,27 @@ func ExtractOne(f FaEntry, s Span) (FaEntry, error) {
 	}, nil
 }
 
-func ExtractFasta(fit iter.Iter[FaEntry], cit iter.Iter[ChrSpan]) *iter.Iterator[FaEntry] {
-	return &iter.Iterator[FaEntry]{Iteratef: func(yield func(FaEntry) error) error {
+func ExtractFasta[F FaEnter, C ChrSpanner](fit iter.Seq2[F, error], cit iter.Seq2[C, error]) iter.Seq2[FaEntry, error] {
+	return func(yield func(FaEntry, error) bool) {
 		m, e := CollectChrSpanMap(cit)
 		if e != nil {
-			return e
+			if ok := yield(FaEntry{}, e); !ok {
+				return
+			}
 		}
-		fit.Iterate(func(f FaEntry) error {
-			spans := m[f.Header]
-			for _, span := range spans {
-				out, e := ExtractOne(f, span)
-				if e != nil {
-					return e
-				}
-				e = yield(out)
-				if e != nil {
-					return e
+		for f, err := range fit {
+			if err != nil {
+				if ok := yield(FaEntry{}, e); !ok {
+					return
 				}
 			}
-			return nil
-		})
-		return nil
-	}}
+			spans := m[f.FaHeader()]
+			for _, span := range spans {
+				out, e := ExtractOne(toFaEntry(f), span)
+				if ok := yield(out, e); !ok {
+					return
+				}
+			}
+		}
+	}
 }

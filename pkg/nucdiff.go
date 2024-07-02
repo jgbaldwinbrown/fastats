@@ -1,6 +1,7 @@
 package fastats
 
 import (
+	"iter"
 	"os"
 	"encoding/json"
 	"flag"
@@ -9,7 +10,6 @@ import (
 	"sort"
 	"fmt"
 	"regexp"
-	"github.com/jgbaldwinbrown/iter"
 )
 
 // ID=SNP_1;Name=gap;subst_len=1;query_dir=1;query_sequence=3R;query_coord=12-12;query_bases=N;ref_bases=t;color=#42C042
@@ -55,18 +55,21 @@ type NucdiffData struct {
 	M map[ChrSpan]map[string]NucdiffAttr
 }
 
-func NucdiffReadGff(d *NucdiffData, crossname string, it iter.Iter[GffEntry[NucdiffAttr]]) error {
+func NucdiffReadGff[G GffEnter[NucdiffAttr]](d *NucdiffData, crossname string, it iter.Seq2[G, error]) error {
 	d.CrossNames = append(d.CrossNames, crossname)
-	return it.Iterate(func(g GffEntry[NucdiffAttr]) error {
-		m, ok := d.M[g.ChrSpan]
+	for g, e := range it {
+		if e != nil {
+			return e
+		}
+			
+		m, ok := d.M[toChrSpan(g)]
 		if !ok {
 			m = map[string]NucdiffAttr{}
-			d.M[g.ChrSpan] = m
+			d.M[toChrSpan(g)] = m
 		}
-		m[crossname] = g.Attributes
-
-		return nil
-	})
+		m[crossname] = g.GffAttributes()
+	}
+	return nil
 }
 
 func NucdiffReadGffs(paths []string) (*NucdiffData, error) {
@@ -101,26 +104,28 @@ func (f StringFormatter) Format(format string) string {
 // 	
 // }
 
-func NucdiffReadVcf(d *NucdiffVcfData, crossname string, it iter.Iter[VcfEntry[struct{}]]) error {
+func NucdiffReadVcf[V VcfHeader](d *NucdiffVcfData[V], crossname string, it iter.Seq2[V, error]) error {
 	d.CrossNames = append(d.CrossNames, crossname)
-	return it.Iterate(func(v VcfEntry[struct{}]) error {
-		m, ok := d.M[v.ChrSpan]
+	for v, e := range it {
+		if e != nil {
+			return e
+		}
+		m, ok := d.M[toChrSpan(v)]
 		if !ok {
-			m = map[string]VcfEntry[struct{}]{}
-			d.M[v.ChrSpan] = m
+			m = map[string]V{}
+			d.M[toChrSpan(v)] = m
 		}
 		m[crossname] = v
-
-		return nil
-	})
+	}
+	return nil
 }
 
-func NucdiffReadVcfs(refname string, crossnames []string, paths []string) (*NucdiffVcfData, error) {
+func NucdiffReadVcfs(refname string, crossnames []string, paths []string) (*NucdiffVcfData[VcfEntry[struct{}]], error) {
 	if len(crossnames) != len(paths) {
 		return nil, fmt.Errorf("len(crossnames) %v != len(paths) %v", len(crossnames), len(paths))
 	}
 
-	d := new(NucdiffVcfData)
+	d := new(NucdiffVcfData[VcfEntry[struct{}]])
 	d.RefName = refname
 	d.M = map[ChrSpan]map[string]VcfEntry[struct{}]{}
 
@@ -130,7 +135,7 @@ func NucdiffReadVcfs(refname string, crossnames []string, paths []string) (*Nucd
 			if e != nil { return e }
 			defer func() { Must(r.Close()) }()
 
-			return NucdiffReadVcf(d, crossnames[i], ParseSimpleVcf(r))
+			return NucdiffReadVcf[VcfEntry[struct{}]](d, crossnames[i], ParseSimpleVcf(r))
 		}()
 		if err != nil {
 			return nil, err
@@ -140,26 +145,26 @@ func NucdiffReadVcfs(refname string, crossnames []string, paths []string) (*Nucd
 	return d, nil
 }
 
-type NucdiffVcfData struct {
+type NucdiffVcfData[V VcfHeader] struct {
 	RefName string
 	CrossNames []string
-	M map[ChrSpan]map[string]VcfEntry[struct{}]
+	M map[ChrSpan]map[string]V
 }
 
-func GetSortedChrSpans(d *NucdiffVcfData) []ChrSpan {
+func GetSortedChrSpans[V VcfHeader](d *NucdiffVcfData[V]) []ChrSpan {
 	cspans := make([]ChrSpan, 0, len(d.M))
 	for k, _ := range d.M {
 		cspans = append(cspans, k)
 	}
-	sort.Slice(cspans, func(i, j int) bool { return ChrSpanLess(cspans[i], cspans[j]) })
+	sort.Slice(cspans, func(i, j int) bool { return ChrSpanLess[ChrSpan](cspans[i], cspans[j]) })
 	return cspans
 }
 
-func GetAlleles(crossnames []string, dmap map[string]VcfEntry[struct{}]) (alleles []string, crossToIndex map[string]int) {
+func GetAlleles[V VcfHeader](crossnames []string, dmap map[string]V) (alleles []string, crossToIndex map[string]int) {
 	m := map[string]int{}
 	alleleset := map[string]int{}
 	for crossname, dv := range dmap {
-		a := dv.Alts[0]
+		a := dv.VcfAlts()[0]
 		idx, ok := alleleset[a]
 		if !ok {
 			alleles = append(alleles, a)
@@ -171,7 +176,7 @@ func GetAlleles(crossnames []string, dmap map[string]VcfEntry[struct{}]) (allele
 	return alleles, m
 }
 
-func MergeNucdiffVcfEntries(d *NucdiffVcfData, refname string, crossnames []string, crossidxs map[string]int, chrspan ChrSpan) VcfEntry[StructuredInfoSamples[string, StringFormatter]] {
+func MergeNucdiffVcfEntries[V VcfHeader](d *NucdiffVcfData[V], refname string, crossnames []string, crossidxs map[string]int, chrspan ChrSpan) VcfEntry[StructuredInfoSamples[string, StringFormatter]] {
 	var v VcfEntry[StructuredInfoSamples[string, StringFormatter]]
 	dmap, ok := d.M[chrspan]
 	if !ok {
@@ -189,11 +194,11 @@ func MergeNucdiffVcfEntries(d *NucdiffVcfData, refname string, crossnames []stri
 	v.Alts, allelemap = GetAlleles(crossnames, dmap)
 
 	for crossname, dv := range dmap {
-		v.ChrSpan = dv.ChrSpan
-		v.ID = dv.ID
-		v.Ref = dv.Ref
-		v.Qual = dv.Qual
-		v.Filter = dv.Filter
+		v.ChrSpan = toChrSpan(dv)
+		v.ID = dv.VcfID()
+		v.Ref = dv.VcfRef()
+		v.Qual = dv.VcfQual()
+		v.Filter = dv.VcfFilter()
 		altidx, ok := allelemap[crossname]
 		if ok {
 			v.InfoAndSamples.Samples.Samples[crossidxs[crossname]] = []StringFormatter{StringFormatter(fmt.Sprintf("%v/%v", altidx, altidx))}
@@ -203,7 +208,7 @@ func MergeNucdiffVcfEntries(d *NucdiffVcfData, refname string, crossnames []stri
 	return v
 }
 
-func NucdiffWriteVcf(d *NucdiffVcfData, w io.Writer) error {
+func NucdiffWriteVcf[V VcfHeader](d *NucdiffVcfData[V], w io.Writer) error {
 	cw := csv.NewWriter(w)
 	cw.Comma = rune('\t')
 	defer func() { cw.Flush() }()

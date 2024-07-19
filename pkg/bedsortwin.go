@@ -86,7 +86,7 @@ func WindowSortedBed[B BedEnter[FT], FT any](it iter.Seq2[B, error], winsize, wi
 					out.Fields = d.AppendToSlice(out.Fields[:0])
 					// out.Fields = AppendDequeBedFields(out.Fields[:0], &d)
 					// log.Printf("yielding %v\n", out)
-					if ok := yield(out, nil); !ok {
+					if !yield(out, nil) {
 						return false
 					}
 				}
@@ -267,7 +267,7 @@ func FlatToFloatBed[B BedEnter[[]string]](it iter.Seq2[B, error]) iter.Seq2[BedE
 func SliceIter2[S ~[]T, T any](s S) func(func(T, error) bool) {
 	return func(yield func(T, error) bool) {
 		for _, val := range s {
-			if ok := yield(val, nil); !ok {
+			if !yield(val, nil) {
 				return
 			}
 		}

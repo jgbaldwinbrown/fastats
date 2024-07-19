@@ -37,7 +37,7 @@ func GCIter[B BedEnter[string]](views iter.Seq2[B, error]) iter.Seq2[BedEntry[fl
 	return func(yield func(BedEntry[float64], error) bool) {
 		for view, e := range views {
 			frac := GCFrac(view.BedFields())
-			if ok := yield(BedEntry[float64]{ChrSpan: toChrSpan(view), Fields: frac}, e); !ok {
+			if !yield(BedEntry[float64]{ChrSpan: toChrSpan(view), Fields: frac}, e) {
 				return
 			}
 		}

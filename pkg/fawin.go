@@ -12,7 +12,7 @@ func Wins(start, end, size, step int64) iter.Seq[Span] {
 			if winend > end {
 				winend = end
 			}
-			if ok := yield(Span{i, winend}); !ok {
+			if !yield(Span{i, winend}) {
 				return
 			}
 		}
@@ -27,7 +27,7 @@ func FaEntryWins[F FaEnter](fe F, size int64, step int64) iter.Seq[BedEntry[stri
 				ChrSpan: ChrSpan{fe.FaHeader(), Span{s.Start, s.End}},
 				Fields: fe.FaSeq()[s.Start : s.End],
 			}
-			if ok := yield(fv); !ok {
+			if !yield(fv) {
 				return
 			}
 		}
@@ -38,13 +38,13 @@ func FaWins[F FaEnter](fa iter.Seq2[F, error], size int64, step int64) iter.Seq2
 	return func(yield func(BedEntry[string], error) bool) {
 		for fe, err := range fa {
 			if err != nil {
-				if ok := yield(BedEntry[string]{}, err); !ok {
+				if !yield(BedEntry[string]{}, err) {
 					return
 				}
 			}
 			wins := FaEntryWins(fe, size, step)
 			for view := range wins {
-				if ok := yield(view, nil); !ok {
+				if !yield(view, nil) {
 					return
 				}
 			}

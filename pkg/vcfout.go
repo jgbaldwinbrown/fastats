@@ -173,7 +173,7 @@ func ParseSimpleVcf(r io.Reader) iter.Seq2[VcfEntry[struct{}], error] {
 			}
 
 			b, e := ParseSimpleVcfEntry(l)
-			if ok := yield(b, e); !ok {
+			if !yield(b, e) {
 				return
 			}
 		}

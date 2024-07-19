@@ -43,16 +43,16 @@ func parseFastq(r io.Reader, yield func(FqEntry, error) bool) {
 	var lines []string
 	for lines, err := ScanFour(lines, s); err != io.EOF; lines, err = ScanFour(lines, s) {
 		if err != nil {
-			if ok := yield(FqEntry{}, err); !ok {
+			if !yield(FqEntry{}, err) {
 				return
 			}
 		}
 		if len(lines[0]) < 1 {
-			if ok := yield(FqEntry{}, fmt.Errorf("parseFastq: empty header line")); !ok {
+			if !yield(FqEntry{}, fmt.Errorf("parseFastq: empty header line")) {
 				return
 			}
 		}
-		if ok := yield(FqEntry{FaEntry: FaEntry{Header: lines[0][1:], Seq: lines[1]}, Qual: lines[3]}, nil); !ok {
+		if !yield(FqEntry{FaEntry: FaEntry{Header: lines[0][1:], Seq: lines[1]}, Qual: lines[3]}, nil) {
 			return
 		}
 	}
@@ -68,7 +68,7 @@ func FqChrlens[F FqEnter](it iter.Seq2[F, error]) iter.Seq2[FaLen, error] {
 	return func(yield func(FaLen, error) bool) {
 		for f, e := range it {
 			falen := Chrlen(f)
-			if ok := yield(falen, e); !ok {
+			if !yield(falen, e) {
 				return
 			}
 		}

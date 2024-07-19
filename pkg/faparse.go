@@ -33,7 +33,7 @@ func parseFasta(r io.Reader, yield func(FaEntry, error) bool) {
 
 	for s.Scan() {
 		if s.Err() != nil {
-			if ok := yield(FaEntry{}, s.Err()); !ok {
+			if !yield(FaEntry{}, s.Err()) {
 				return
 			}
 		}
@@ -44,7 +44,7 @@ func parseFasta(r io.Reader, yield func(FaEntry, error) bool) {
 		if s.Text()[0] == '>' {
 			// fmt.Println("found header:", s.Text())
 			if started {
-				if ok := yield(FaEntry{Header: hdr, Seq: seq.String()}, nil); !ok {
+				if !yield(FaEntry{Header: hdr, Seq: seq.String()}, nil) {
 					return
 				}
 			}
@@ -56,7 +56,7 @@ func parseFasta(r io.Reader, yield func(FaEntry, error) bool) {
 
 		_, e := seq.WriteString(s.Text())
 		if e != nil {
-			if ok := yield(FaEntry{}, e); !ok {
+			if !yield(FaEntry{}, e) {
 				return
 			}
 		}
@@ -85,7 +85,7 @@ func Chrlen[F FaEnter](f F) FaLen {
 func Chrlens[F FaEnter](it iter.Seq2[F, error]) iter.Seq2[FaLen, error] {
 	return func(yield func(FaLen, error) bool) {
 		for f, e := range it {
-			if ok := yield(Chrlen(f), e); !ok {
+			if !yield(Chrlen(f), e) {
 				return
 			}
 		}

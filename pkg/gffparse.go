@@ -95,7 +95,7 @@ func ParseGff[AT any](r io.Reader, attributeParse func(string) (AT, error)) iter
 
 		for l, e := cr.Read(); e != io.EOF; l, e = cr.Read() {
 			b, e := ParseGffEntry(l, attributeParse)
-			if ok := yield(b, e); !ok {
+			if !yield(b, e) {
 				return
 			}
 		}

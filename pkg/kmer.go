@@ -33,7 +33,7 @@ type Kmer struct {
 func KmerIter(m map[string]int64) iter.Seq[Kmer] {
 	return func(yield func(Kmer) bool) {
 		for seq, count := range m {
-			if ok := yield(Kmer{seq, count}); !ok {
+			if !yield(Kmer{seq, count}) {
 				return
 			}
 		}

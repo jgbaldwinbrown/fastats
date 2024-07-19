@@ -58,7 +58,7 @@ func ParseVcf[T any](r io.Reader, f func(line []string) (T, error)) iter.Seq2[Vc
 			}
 
 			b, e := ParseVcfEntry(l, f)
-			if ok := yield(b, e); !ok {
+			if !yield(b, e) {
 				return
 			}
 		}

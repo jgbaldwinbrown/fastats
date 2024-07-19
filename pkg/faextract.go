@@ -33,20 +33,20 @@ func ExtractFasta[F FaEnter, C ChrSpanner](fit iter.Seq2[F, error], cit iter.Seq
 	return func(yield func(FaEntry, error) bool) {
 		m, e := CollectChrSpanMap(cit)
 		if e != nil {
-			if ok := yield(FaEntry{}, e); !ok {
+			if !yield(FaEntry{}, e) {
 				return
 			}
 		}
 		for f, err := range fit {
 			if err != nil {
-				if ok := yield(FaEntry{}, e); !ok {
+				if !yield(FaEntry{}, e) {
 					return
 				}
 			}
 			spans := m[f.FaHeader()]
 			for _, span := range spans {
 				out, e := ExtractOne(toFaEntry(f), span)
-				if ok := yield(out, e); !ok {
+				if !yield(out, e) {
 					return
 				}
 			}

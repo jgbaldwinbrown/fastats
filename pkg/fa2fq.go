@@ -16,7 +16,7 @@ func FaQualMerge[F FaEnter](fit iter.Seq2[F, error], qit iter.Seq2[[]int64, erro
 	return func(yield func(FqEntry, error) bool) {
 		for fa, e := range fit {
 			if e != nil {
-				if ok := yield(FqEntry{}, e); !ok {
+				if !yield(FqEntry{}, e) {
 					return
 				}
 			}
@@ -28,7 +28,7 @@ func FaQualMerge[F FaEnter](fit iter.Seq2[F, error], qit iter.Seq2[[]int64, erro
 				return
 			}
 			if e != nil {
-				if ok := yield(FqEntry{}, e); !ok {
+				if !yield(FqEntry{}, e) {
 					return
 				}
 			}
@@ -36,7 +36,7 @@ func FaQualMerge[F FaEnter](fit iter.Seq2[F, error], qit iter.Seq2[[]int64, erro
 			b.Reset()
 			e = AppendQualsToAscii(&b, q)
 
-			if ok := yield(FqEntry{FaEntry: toFaEntry(fa), Qual: b.String()}, e); !ok {
+			if !yield(FqEntry{FaEntry: toFaEntry(fa), Qual: b.String()}, e) {
 				return
 			}
 		}
@@ -62,16 +62,16 @@ func FaToFq[FA FaEnter](fit iter.Seq2[FA, error], qual byte) iter.Seq2[FqEntry, 
 	return func(yield func(FqEntry, error) bool) {
 		for f, e := range fit {
 			if e != nil {
-				if ok := yield(FqEntry{}, e); !ok {
+				if !yield(FqEntry{}, e) {
 					return
 				}
 			}
 			if len(f.FaSeq()) <= 1024 {
-				if ok := yield(FqEntry{FaEntry: toFaEntry(f), Qual: base[:len(f.FaSeq())]}, nil); !ok {
+				if !yield(FqEntry{FaEntry: toFaEntry(f), Qual: base[:len(f.FaSeq())]}, nil) {
 					return
 				}
 			} else {
-				if ok := yield(FqEntry{FaEntry: toFaEntry(f), Qual: BuildQual(qual, len(f.FaSeq()))}, nil); !ok {
+				if !yield(FqEntry{FaEntry: toFaEntry(f), Qual: BuildQual(qual, len(f.FaSeq()))}, nil) {
 					return
 				}
 			}

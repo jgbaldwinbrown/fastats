@@ -25,9 +25,17 @@ type Spanner interface {
 	SpanEnd() int64
 }
 
+func ToSpan[S Spanner](s S) Span {
+	return Span{Start: s.SpanStart(), End: s.SpanEnd()}
+}
+
 type ChrSpan struct {
 	Chr string
 	Span
+}
+
+func ToChrSpan[C ChrSpanner](c C) ChrSpan {
+	return ChrSpan{Chr: c.SpanChr(), Span: ToSpan(c)}
 }
 
 func (c ChrSpan) SpanChr() string {
@@ -51,6 +59,13 @@ func (b BedEntry[T]) BedFields() T {
 type BedEnter[FieldsT any] interface {
 	ChrSpanner
 	BedFields() FieldsT
+}
+
+func ToBedEntry[B BedEnter[FieldsT], FieldsT any](b B) BedEntry[FieldsT] {
+	return BedEntry[FieldsT] {
+		ChrSpan: ToChrSpan(b),
+		Fields: b.BedFields(),
+	}
 }
 
 func ScanOne(field string, ptr any) (n int, err error) {

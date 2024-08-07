@@ -38,6 +38,19 @@ func (g GffHead) GffStrand() byte { return g.Strand }
 func (g GffHead) GffPhase() int { return g.Phase }
 func (g GffHead) GffHasPhase() bool { return g.HasPhase }
 
+func ToGffHead[G GffHeader](g G) GffHead {
+	return GffHead{
+		ChrSpan: ToChrSpan(g),
+		Source: g.GffSource(),
+		Type: g.GffType(),
+		Score: g.GffScore(),
+		HasScore: g.GffHasScore(),
+		Strand: g.GffStrand(),
+		Phase: g.GffPhase(),
+		HasPhase: g.GffHasPhase(),
+	}
+}
+
 type GffEntry[AttT any] struct {
 	GffHead
 	Attributes AttT
@@ -50,6 +63,13 @@ type GffEnter[AttT any] interface {
 
 func (g GffEntry[T]) GffAttributes() T {
 	return g.Attributes
+}
+
+func ToGffEntry[G GffEnter[AttT], AttT any](g G) GffEntry[AttT] {
+	return GffEntry[AttT]{
+		GffHead: ToGffHead(g),
+		Attributes: g.GffAttributes(),
+	}
 }
 
 func ParseGffEntry[AT any](line []string, attributeParse func(string) (AT, error)) (GffEntry[AT], error) {

@@ -23,6 +23,13 @@ type FaEnter interface {
 	FaSeq() string
 }
 
+func ToFaEntry[F FaEnter](f F) FaEntry {
+	return FaEntry{
+		Header: f.FaHeader(),
+		Seq: f.FaSeq(),
+	}
+}
+
 func parseFasta(r io.Reader, yield func(FaEntry, error) bool) {
 	s := bufio.NewScanner(r)
 	s.Buffer([]byte{}, 1e12)

@@ -33,6 +33,17 @@ type VcfHeader interface {
 	VcfFilter() string
 }
 
+func ToVcfHead[V VcfHeader](v V) VcfHead {
+	return VcfHead{
+		ChrSpan: ToChrSpan(v),
+		ID: v.VcfID(),
+		Ref: v.VcfRef(),
+		Alts: v.VcfAlts(),
+		Qual: v.VcfQual(),
+		Filter: v.VcfFilter(),
+	}
+}
+
 type VcfEntry[T any] struct {
 	VcfHead
 	InfoAndSamples T
@@ -45,6 +56,13 @@ func (v VcfEntry[T]) VcfInfoAndSamples() T {
 type VcfEnter[T any] interface {
 	VcfHeader
 	VcfInfoAndSamples() T
+}
+
+func ToVcfEntry[V VcfEnter[T], T any](v V) VcfEntry[T] {
+	return VcfEntry[T]{
+		VcfHead: ToVcfHead(v),
+		InfoAndSamples: v.VcfInfoAndSamples(),
+	}
 }
 
 type InfoPair[T any] struct {

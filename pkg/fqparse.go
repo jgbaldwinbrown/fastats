@@ -22,6 +22,13 @@ type FqEnter interface {
 	FqQual() string
 }
 
+func ToFqEntry[F FqEnter](f F) FqEntry {
+	return FqEntry {
+		FaEntry: ToFaEntry(f),
+		Qual: f.FqQual(),
+	}
+}
+
 func ScanFour(dest []string, s *bufio.Scanner) ([]string, error) {
 	dest = dest[:0]
 	for i := 0; i < 4; i++ {

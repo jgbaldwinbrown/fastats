@@ -23,6 +23,9 @@ type FqEnter interface {
 }
 
 func ToFqEntry[F FqEnter](f F) FqEntry {
+	if val, ok := any(f).(FqEntry); ok {
+		return val
+	}
 	return FqEntry {
 		FaEntry: ToFaEntry(f),
 		Qual: f.FqQual(),

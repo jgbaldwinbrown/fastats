@@ -24,6 +24,9 @@ type FaEnter interface {
 }
 
 func ToFaEntry[F FaEnter](f F) FaEntry {
+	if val, ok := any(f).(FaEntry); ok {
+		return val
+	}
 	return FaEntry{
 		Header: f.FaHeader(),
 		Seq: f.FaSeq(),

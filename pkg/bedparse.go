@@ -62,6 +62,9 @@ type BedEnter[FieldsT any] interface {
 }
 
 func ToBedEntry[B BedEnter[FieldsT], FieldsT any](b B) BedEntry[FieldsT] {
+	if val, ok := any(b).(BedEntry[FieldsT]); ok {
+		return val
+	}
 	return BedEntry[FieldsT] {
 		ChrSpan: ToChrSpan(b),
 		Fields: b.BedFields(),

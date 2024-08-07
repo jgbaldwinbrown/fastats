@@ -34,8 +34,8 @@ type VcfHeader interface {
 }
 
 func ToVcfHead[V VcfHeader](v V) VcfHead {
-	if val, ok := any(v).(VcfHead); ok {
-		return val
+	if ptr, ok := any(&v).(*VcfHead); ok {
+		return *ptr
 	}
 	return VcfHead{
 		ChrSpan: ToChrSpan(v),
@@ -62,8 +62,8 @@ type VcfEnter[T any] interface {
 }
 
 func ToVcfEntry[V VcfEnter[T], T any](v V) VcfEntry[T] {
-	if val, ok := any(v).(VcfEntry[T]); ok {
-		return val
+	if ptr, ok := any(&v).(*VcfEntry[T]); ok {
+		return *ptr
 	}
 	return VcfEntry[T]{
 		VcfHead: ToVcfHead(v),

@@ -39,8 +39,8 @@ func (g GffHead) GffPhase() int { return g.Phase }
 func (g GffHead) GffHasPhase() bool { return g.HasPhase }
 
 func ToGffHead[G GffHeader](g G) GffHead {
-	if val, ok := any(g).(GffHead); ok {
-		return val
+	if ptr, ok := any(&g).(*GffHead); ok {
+		return *ptr
 	}
 	return GffHead{
 		ChrSpan: ToChrSpan(g),
@@ -69,8 +69,8 @@ func (g GffEntry[T]) GffAttributes() T {
 }
 
 func ToGffEntry[G GffEnter[AttT], AttT any](g G) GffEntry[AttT] {
-	if val, ok := any(g).(GffEntry[AttT]); ok {
-		return val
+	if ptr, ok := any(&g).(*GffEntry[AttT]); ok {
+		return *ptr
 	}
 	return GffEntry[AttT]{
 		GffHead: ToGffHead(g),

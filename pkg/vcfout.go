@@ -163,8 +163,8 @@ func StructuredVcfEntryToCsv[InfoT any, SampleT Formatter](buf []string, v VcfEn
 	return buf, nil
 }
 
-func ParseSimpleVcfEntry(line []string) (VcfEntry[struct{}], error) {
-	var v VcfEntry[struct{}]
+func ParseVcfHead(line []string) (VcfHead, error) {
+	var v VcfHead
 	v.Alts = make([]string, 1)
 	if len(line) < 7 {
 		return v, fmt.Errorf("ParseSimpleVcfEntry: len(line) %v < 7", len(line))
@@ -176,6 +176,11 @@ func ParseSimpleVcfEntry(line []string) (VcfEntry[struct{}], error) {
 	v.Start--
 	v.End = v.Start + 1
 	return v, nil
+}
+
+func ParseSimpleVcfEntry(line []string) (VcfEntry[struct{}], error) {
+	v, e := ParseVcfHead(line)
+	return VcfEntry[struct{}]{VcfHead: v}, e
 }
 
 var commentRe = regexp.MustCompile(`^#`)

@@ -1,6 +1,7 @@
 package fastats
 
 import (
+	"log"
 	"regexp"
 	"fmt"
 	"io"
@@ -86,29 +87,37 @@ func ParseGffEntry[AT any](line []string, attributeParse func(string) (AT, error
 
 	var scoreStr string
 	var phaseStr string
-	_, e := Scan(line[:8], &g.Chr, &g.Source, &g.Type, &g.Start, &g.End, &scoreStr, &g.Strand, &phaseStr)
+	var strandStr string
+	log.Printf("line: %#v\n", line)
+	_, e := Scan(line[:8], &g.Chr, &g.Source, &g.Type, &g.Start, &g.End, &scoreStr, &strandStr, &phaseStr)
 	if e != nil {
-		return g, e
+		return g, fmt.Errorf("ParseGffEntry: Scan: %w", e)
+	}
+	if len(strandStr) > 0 {
+		g.Strand = strandStr[0]
 	}
 
 	if scoreStr != "." {
 		g.HasScore = true
 		_, e := fmt.Sscanf(scoreStr, "%v", &g.Score)
 		if e != nil {
-			return g, e
+			return g, fmt.Errorf("ParseGffEntry: Score: %w", e)
 		}
 	}
 
 	if phaseStr != "." {
-		g.HasScore = true
+		g.HasPhase = true
 		_, e := fmt.Sscanf(phaseStr, "%v", &g.Phase)
 		if e != nil {
-			return g, e
+			return g, fmt.Errorf("ParseGffEntry: Phase: %w", e)
 		}
 	}
 
 	g.Attributes, e = attributeParse(line[8])
-	return g, e
+	if e != nil {
+		return g, fmt.Errorf("ParseGffEntry: Attributes: %w", e)
+	}
+	return g, nil
 }
 
 func ParseGff[AT any](r io.Reader, attributeParse func(string) (AT, error)) iter.Seq2[GffEntry[AT], error] {

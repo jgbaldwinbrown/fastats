@@ -96,6 +96,7 @@ func ParseGffEntry[AT any](line []string, attributeParse func(string) (AT, error
 	if len(strandStr) > 0 {
 		g.Strand = strandStr[0]
 	}
+	g.Start--
 
 	if scoreStr != "." {
 		g.HasScore = true

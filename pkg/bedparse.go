@@ -25,6 +25,10 @@ type Spanner interface {
 	SpanEnd() int64
 }
 
+func StartOneIndex[S Spanner](s S) int64 {
+	return s.SpanStart() + 1
+}
+
 func ToSpan[S Spanner](s S) Span {
 	return Span{Start: s.SpanStart(), End: s.SpanEnd()}
 }

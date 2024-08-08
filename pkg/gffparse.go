@@ -1,7 +1,6 @@
 package fastats
 
 import (
-	"log"
 	"regexp"
 	"fmt"
 	"io"
@@ -88,7 +87,6 @@ func ParseGffEntry[AT any](line []string, attributeParse func(string) (AT, error
 	var scoreStr string
 	var phaseStr string
 	var strandStr string
-	log.Printf("line: %#v\n", line)
 	_, e := Scan(line[:8], &g.Chr, &g.Source, &g.Type, &g.Start, &g.End, &scoreStr, &strandStr, &phaseStr)
 	if e != nil {
 		return g, fmt.Errorf("ParseGffEntry: Scan: %w", e)

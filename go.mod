@@ -1,6 +1,6 @@
 module github.com/jgbaldwinbrown/fastats
 
-go 1.22.2
+go 1.23
 
 require (
 	github.com/jgbaldwinbrown/iterh v0.1.3

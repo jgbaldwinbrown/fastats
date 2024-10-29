@@ -158,19 +158,36 @@ func ParseBedFlat(r io.Reader) iter.Seq2[BedEntry[[]string], error] {
 	})
 }
 
-func SpreadBed[B BedEnter[T], T any](it iter.Seq2[B, error]) func(func(BedEntry[T], error) bool) {
-	return func(yield func(BedEntry[T], error) bool) {
-		it(func(b B, e error) bool {
+func SpreadBed[B BedEnter[T], T any](it iter.Seq[B]) func(func(BedEntry[T]) bool) {
+	return func(yield func(BedEntry[T]) bool) {
+		for b := range it {
 			for i := b.SpanStart(); i < b.SpanEnd(); i++ {
 				sub := BedEntry[T]{}
 				sub.Chr = b.SpanChr()
 				sub.Start = i
 				sub.End = i+1
 				sub.Fields = b.BedFields()
-				ok := yield(sub, e)
-				return ok && e == nil
+				if !yield(sub) {
+					return
+				}
 			}
-			return true
-		})
+		}
+	}
+}
+
+func SpreadBed2[B BedEnter[T], T any](it iter.Seq2[B, error]) func(func(BedEntry[T], error) bool) {
+	return func(yield func(BedEntry[T], error) bool) {
+		for b, e := range it {
+			for i := b.SpanStart(); i < b.SpanEnd(); i++ {
+				sub := BedEntry[T]{}
+				sub.Chr = b.SpanChr()
+				sub.Start = i
+				sub.End = i+1
+				sub.Fields = b.BedFields()
+				if !yield(sub, e) {
+					return
+				}
+			}
+		}
 	}
 }

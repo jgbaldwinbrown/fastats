@@ -5,6 +5,17 @@ import (
 	"iter"
 )
 
+func CollectChrSpannerMap[C ChrSpanner](cit iter.Seq2[C, error]) (map[string][]C, error) {
+	m := map[string][]C{}
+	for c, err := range cit {
+		if err != nil {
+			return nil, err
+		}
+		m[c.SpanChr()] = append(m[c.SpanChr()], c)
+	}
+	return m, nil
+}
+
 func CollectChrSpanMap[C ChrSpanner](cit iter.Seq2[C, error]) (map[string][]Span, error) {
 	m := map[string][]Span{}
 	for c, err := range cit {

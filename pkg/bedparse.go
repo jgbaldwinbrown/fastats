@@ -1,6 +1,8 @@
 package fastats
 
 import (
+	"strconv"
+	"math"
 	"fmt"
 	"io"
 	"encoding/csv"
@@ -155,6 +157,16 @@ func ParseBedFlat(r io.Reader) iter.Seq2[BedEntry[[]string], error] {
 		out := make([]string, len(fields))
 		copy(out, fields)
 		return out, nil
+	})
+}
+
+func ParseBedGraph(r io.Reader) iter.Seq2[BedEntry[float64], error] {
+	return ParseBed(r, func(fields []string) (float64, error) {
+		if len(fields) < 1 {
+			return math.NaN(), nil
+		}
+		val, err := strconv.ParseFloat(fields[0], 64)
+		return val, err
 	})
 }
 

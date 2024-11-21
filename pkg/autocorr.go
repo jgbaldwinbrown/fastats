@@ -2,6 +2,11 @@ package fastats
 
 import (
 	"iter"
+	"flag"
+	"os"
+	"log"
+	"fmt"
+	"strconv"
 
 	"github.com/jgbaldwinbrown/iterh"
 	"github.com/montanaflynn/stats"
@@ -100,5 +105,58 @@ func AutoCorrelationWindows[B BedEnter[float64]](it iter.Seq[B], lags, winsize, 
 				return
 			}
 		}
+	}
+}
+
+type AutoCorrelationFlags struct {
+	Lag int
+	Winsize int
+	Winstep int
+	Col int
+}
+
+func ColToFloat(col int) func([]string) (float64, error) {
+	return func(fields []string) (float64, error) {
+		if len(fields) <= col {
+			return 0, fmt.Errorf("ColToFloat: col %v < len(fields); fields %v", col, fields)
+		}
+		val, e := strconv.ParseFloat(fields[col], 64)
+		return val, e
+	}
+}
+
+func ToBedGraphEntry[B BedEnter[[]string]](col int) func(B) (BedEntry[float64], error) {
+	return func(b B) (BedEntry[float64], error) {
+		var ent BedEntry[float64]
+		ent.ChrSpan = ToChrSpan(b)
+		fields := b.BedFields()
+		if len(fields) <= col {
+			return ent, fmt.Errorf("ToBedGraphEntry: col %v < len(fields); fields %v", col, fields)
+		}
+		var e error
+		ent.Fields, e = strconv.ParseFloat(fields[col], 64)
+		return ent, e
+	}
+}
+
+func FullAutoCorrelationWindows() {
+	var f AutoCorrelationFlags
+	flag.IntVar(&f.Lag, "l", 1, "Lag")
+	flag.IntVar(&f.Winsize, "w", 10, "Window size")
+	flag.IntVar(&f.Winstep, "s", 1, "Window step")
+	flag.IntVar(&f.Col, "c", 0, "Field column to correlate")
+	flag.Parse()
+
+	bed, errp := iterh.BreakWithError(ParseBed(os.Stdin, ColToFloat(f.Col)))
+	
+	a := AutoCorrelationWindows(bed, f.Lag, f.Winsize, f.Winstep)
+	for win := range a {
+		_, e := fmt.Printf("%v\t%v\t%v\t%v\n", win.Chr, win.Start, win.End, win.Fields)
+		if e != nil {
+			log.Fatal(e)
+		}
+	}
+	if *errp != nil {
+		log.Fatal(*errp)
 	}
 }

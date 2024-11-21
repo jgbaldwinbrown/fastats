@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 	"strings"
+	"slices"
+
 	"github.com/jgbaldwinbrown/iterh"
 )
 
@@ -15,7 +17,7 @@ const gffEx = `1	fake	mRNA	0	20	.	+	.	ID=transcript1
 
 func TestParseGffFlat(t *testing.T) {
 	var e error
-	gff := iterh.Collect(iterh.BreakOnError(ParseGffFlat(strings.NewReader(gffEx)), &e))
+	gff := slices.Collect(iterh.BreakOnError(ParseGffFlat(strings.NewReader(gffEx)), &e))
 
 	fmt.Printf("gff: %#v; err: %#v\n", gff, e)
 }

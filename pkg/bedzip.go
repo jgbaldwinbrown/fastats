@@ -13,7 +13,7 @@ import (
 )
 
 func BedZip[B1 BedEnter[[]string], B2 BedEnter[[]string]](it1 iter.Seq[B1], it2 iter.Seq[B2]) []BedEntry[[]string] {
-	matched := iterh.ZipMatches(it1, it2)
+	matched := ZipMatches(it1, it2)
 	out := make([]BedEntry[[]string], 0, len(matched))
 	for chrspan, tup := range matched {
 		if tup.Ok {
@@ -32,12 +32,16 @@ type bedZipFlags struct {
 	Bed2 string
 }
 
-func ChompLine(r io.ByteReader) error {
+func PassLine(r io.ByteReader, w io.ByteWriter) error {
 	for {
 		val, e := r.ReadByte()
 		if e == io.EOF {
 			break
 		}
+		if e != nil {
+			return e
+		}
+		e = w.WriteByte(val)
 		if e != nil {
 			return e
 		}
@@ -48,46 +52,32 @@ func ChompLine(r io.ByteReader) error {
 	return nil
 }
 
-func ParseBedFlatHeader(r io.Reader) iter.Seq2[BedEntry[[]string], error] {
-	return func(y func(BedEntry[[]string], error) bool) {
-		_, e := ChompLine(r)
-		if e != nil && !y(BedEntry[[]string]{}, e) {
-			return
-		}
-		for b, err := range ParseBedFlat(r) {
-			if !y(b, err) {
-				return
-			}
-		}
-	}
+type byteReaderReader interface {
+	io.Reader
+	io.ByteReader
 }
 
 func FullBedZip() {
 	var f bedZipFlags
 	flag.BoolVar(&f.Header1, "h1", false, "first bed file has a header")
 	flag.BoolVar(&f.Header2, "h2", false, "second bed file has a header")
-	flag.StringVar(&f.Bed1, "h1", "", "first bed file")
-	flag.StringVar(&f.Bed2, "h2", "", "second bed file")
+	flag.StringVar(&f.Bed1, "b1", "", "first bed file")
+	flag.StringVar(&f.Bed2, "b2", "", "second bed file")
 	flag.Parse()
 
 	var err error
-	var b1, b2 iter.Seq2[BedEntry[[]string], error]
-	if (f.Header1) {
-		b1 := iterh.BreakOnError(iterh.PathIter(f.Bed1, ParseBedFlatHeader), &err)
-	} else {
-		b1 := iterh.BreakOnError(iterh.PathIter(f.Bed1, ParseBedFlat), &err)
+	r1, e := os.Open(f.Bed1)
+	if e != nil {
+		log.Fatal(e)
 	}
-	if (f.Header2) {
-		b2 := iterh.BreakOnError(iterh.PathIter(f.Bed2, ParseBedFlatHeader), &err)
-	} else {
-		b2 := iterh.BreakOnError(iterh.PathIter(f.Bed2, ParseBedFlat), &err)
+	defer r1.Close()
+	br1 := bufio.NewReader(r1)
+	r2, e := os.Open(f.Bed2)
+	if e != nil {
+		log.Fatal(e)
 	}
-
-	out := BedZip(b1, b2)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	defer r2.Close()
+	br2 := bufio.NewReader(r2)
 	w := bufio.NewWriter(os.Stdout)
 	defer func() {
 		e := w.Flush()
@@ -95,6 +85,28 @@ func FullBedZip() {
 			log.Fatal(e)
 		}
 	}()
+
+	if f.Header1 {
+		e := PassLine(br1, w)
+		if e != nil {
+			log.Fatal(e)
+		}
+	}
+	if f.Header2 {
+		e := PassLine(br2, w)
+		if e != nil {
+			log.Fatal(e)
+		}
+	}
+
+	b1 := iterh.BreakOnError(ParseBedFlat(br1), &err)
+	b2 := iterh.BreakOnError(ParseBedFlat(br2), &err)
+
+	out := BedZip(b1, b2)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	for _, b := range out {
 		fmt.Fprintf(w, "%v\t%v\t%v", b.Chr, b.Start, b.End)
 		for _, f := range b.Fields {

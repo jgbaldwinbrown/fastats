@@ -24,6 +24,9 @@ func Rpkm[B BedEnter[float64]](it iter.Seq[B], totalCov float64) iter.Seq[BedEnt
 		for b := range it {
 			out := ToBedEntry(b)
 			out.Fields = RpkmOne(b, totalCov)
+			if !y(out) {
+				return
+			}
 		}
 	}
 }

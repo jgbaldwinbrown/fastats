@@ -73,6 +73,21 @@ func ZipMatches[B1 BedEnter[T1], B2 BedEnter[T2], T1, T2 any](it1 iter.Seq[B1], 
 	return m
 }
 
+func IterateZipMap[T1, T2 any](m map[ChrSpan]OkTuple2[T1, T2]) iter.Seq[BedEntry[Tuple2[T1, T2]]] {
+	return func(yield func(BedEntry[Tuple2[T1, T2]]) bool) {
+		for key, val := range m {
+			b := BedEntry[Tuple2[T1, T2]]{}
+			b.ChrSpan = key
+			b.Fields = val.Tuple2
+			if val.Ok {
+				if !yield(b) {
+					return
+				}
+			}
+		}
+	}
+}
+
 func DivBed[B BedEnter[Tuple2[float64, float64]]](it iter.Seq[B]) iter.Seq[BedEntry[float64]] {
 	return func(y func(BedEntry[float64]) bool) {
 		for b := range it {
@@ -93,13 +108,15 @@ func FullDivCovs() {
 		log.Fatal(fmt.Errorf("Not enough args: %v", os.Args))
 	}
 	cov1, errp1 := iterh.BreakWithError(iterh.PathIter(os.Args[1], ParseBedGraph))
-	rpkm1, _ := RpkmAndTotal(cov1)
+	scov1 := SpreadBed(cov1)
+	rpkm1, _ := RpkmAndTotal(scov1)
 
 	cov2, errp2 := iterh.BreakWithError(iterh.PathIter(os.Args[2], ParseBedGraph))
-	rpkm2, _ := RpkmAndTotal(cov2)
+	scov2 := SpreadBed(cov2)
+	rpkm2, _ := RpkmAndTotal(scov2)
 
-	zipped, errp3 := iterh.BreakWithError(ZipMatchedSorted(rpkm1, rpkm2))
-	div := DivBed(zipped)
+	zipped := ZipMatches(rpkm1, rpkm2)
+	div := DivBed(IterateZipMap(zipped))
 
 	w := bufio.NewWriter(os.Stdout)
 	defer func() {
@@ -120,8 +137,5 @@ func FullDivCovs() {
 	}
 	if *errp2 != nil {
 		log.Fatal(*errp2)
-	}
-	if *errp3 != nil {
-		log.Fatal(*errp3)
 	}
 }

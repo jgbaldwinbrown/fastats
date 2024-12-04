@@ -26,7 +26,7 @@ func toChrSpan[C ChrSpanner](c C) ChrSpan {
 	return ChrSpan{Span: Span{Start: c.SpanStart(), End: c.SpanEnd()}, Chr: c.SpanChr()}
 }
 
-func CheckAndPopMulti[B BedEnter[T], T any](win ChrSpan, d *Deque[B]) {
+func CheckAndPopMulti[B ChrSpanner](win ChrSpan, d *Deque[B]) {
 	for d.Len() > 0 {
 		next := d.Get(0)
 		if FullyLeftOf(toChrSpan(next), win) {
@@ -62,7 +62,7 @@ func UpdateWin(win ChrSpan, chr string, winsize, winstep int) ChrSpan {
 	return win
 }
 
-func WindowSortedBed[B BedEnter[FT], FT any](it iter.Seq2[B, error], winsize, winstep int) func(func(BedEntry[[]B], error) bool) {
+func WindowSortedBed[B ChrSpanner](it iter.Seq2[B, error], winsize, winstep int) func(func(BedEntry[[]B], error) bool) {
 	return func(yield func(BedEntry[[]B], error) bool) {
 		var d Deque[B]
 		win := ChrSpan{"", Span{-1, -1}}

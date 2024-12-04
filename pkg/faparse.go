@@ -1,22 +1,22 @@
 package fastats
 
 import (
-	"log"
-	"fmt"
-	"os"
 	"bufio"
-	"strings"
+	"fmt"
 	"io"
 	"iter"
+	"log"
+	"os"
+	"strings"
 )
 
 type FaEntry struct {
 	Header string
-	Seq string
+	Seq    string
 }
 
 func (f FaEntry) FaHeader() string { return f.Header }
-func (f FaEntry) FaSeq() string { return f.Seq }
+func (f FaEntry) FaSeq() string    { return f.Seq }
 
 type FaEnter interface {
 	FaHeader() string
@@ -29,7 +29,7 @@ func ToFaEntry[F FaEnter](f F) FaEntry {
 	}
 	return FaEntry{
 		Header: f.FaHeader(),
-		Seq: f.FaSeq(),
+		Seq:    f.FaSeq(),
 	}
 }
 
@@ -85,11 +85,11 @@ func ParseFasta(r io.Reader) iter.Seq2[FaEntry, error] {
 
 type FaLen struct {
 	Name string
-	Len int64
+	Len  int64
 }
 
 func Chrlen[F FaEnter](f F) FaLen {
-		return FaLen{f.FaHeader(), int64(len(f.FaSeq()))}
+	return FaLen{f.FaHeader(), int64(len(f.FaSeq()))}
 }
 
 func Chrlens[F FaEnter](it iter.Seq2[F, error]) iter.Seq2[FaLen, error] {

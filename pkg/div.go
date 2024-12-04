@@ -2,11 +2,11 @@ package fastats
 
 import (
 	"bufio"
-	"os"
+	"errors"
 	"fmt"
 	"iter"
-	"errors"
 	"log"
+	"os"
 
 	"github.com/jgbaldwinbrown/iterh"
 )

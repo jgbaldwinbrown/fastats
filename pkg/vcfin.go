@@ -1,11 +1,11 @@
 package fastats
 
 import (
-	"strings"
-	"fmt"
 	"encoding/csv"
+	"fmt"
 	"io"
 	"iter"
+	"strings"
 )
 
 func ParseVcfMainFields[T any](v *VcfEntry[T], line []string) error {
@@ -64,4 +64,3 @@ func ParseVcf[T any](r io.Reader, f func(line []string) (T, error)) iter.Seq2[Vc
 		}
 	}
 }
-

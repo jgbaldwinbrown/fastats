@@ -2,21 +2,21 @@ package fastats
 
 import (
 	"encoding/json"
-	"math"
-	"os"
 	"golang.org/x/exp/slices"
 	"iter"
+	"math"
+	"os"
 )
 
 type FaStats struct {
-	Bp int64
+	Bp      int64
 	MeanLen float64
 	NumSeqs int64
-	N50 int64
-	L50 int64
+	N50     int64
+	L50     int64
 	BpInN50 int64
-	N90 int64
-	L90 int64
+	N90     int64
+	L90     int64
 	BpInN90 int64
 }
 

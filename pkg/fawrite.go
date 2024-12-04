@@ -1,9 +1,9 @@
 package fastats
 
 import (
+	"fmt"
 	"io"
 	"iter"
-	"fmt"
 )
 
 func WriteFaEntries[F FaEnter](w io.Writer, fs ...F) error {

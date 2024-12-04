@@ -1,15 +1,15 @@
 package fastats
 
 import (
-	"fmt"
-	"os"
-	"flag"
 	"bufio"
+	"flag"
+	"fmt"
 	"iter"
+	"os"
 )
 
 func AddKmers(kmap map[string]int64, k int, seq string) {
-	for i := 0; i + k <= len(seq); i++ {
+	for i := 0; i+k <= len(seq); i++ {
 		kmap[seq[i:i+k]]++
 	}
 }
@@ -26,7 +26,7 @@ func CountKmers[F FaEnter](it iter.Seq2[F, error], k int) (map[string]int64, err
 }
 
 type Kmer struct {
-	Seq string
+	Seq   string
 	Count int64
 }
 
@@ -43,7 +43,7 @@ func KmerIter(m map[string]int64) iter.Seq[Kmer] {
 func KmerHist(it iter.Seq[Kmer]) []int64 {
 	var out []int64
 	for k := range it {
-		out = GrowLen(out, int(k.Count) + 1)
+		out = GrowLen(out, int(k.Count)+1)
 		out[k.Count]++
 	}
 	return out

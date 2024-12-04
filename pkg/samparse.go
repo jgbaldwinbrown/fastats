@@ -3,7 +3,7 @@ package fastats
 // func ParseSamHeading(s string) string {
 // 	return s[1:]
 // }
-// 
+//
 // type SamAlignment struct {
 // 	Qname string
 // 	Flag uint16
@@ -17,11 +17,11 @@ package fastats
 // 	Seq string
 // 	Qual string
 // }
-// 
-// func ParseSamAlignment(s string) 
-// 
+//
+// func ParseSamAlignment(s string)
+//
 // func ParseSamEntry
-// 
+//
 // // Col	Field	Type	Brief description
 // // 1	QNAME	String	Query template NAME
 // // 2	FLAG	Int	bitwise FLAG
@@ -34,4 +34,4 @@ package fastats
 // // 9	TLEN	Int	observed Template LENgth
 // // 10	SEQ	String	segment SEQuence
 // // 11	QUAL	String	ASCII of Phred-scaled base QUALity+33
-// // 
+// //

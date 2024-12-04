@@ -1,13 +1,13 @@
 package fastats
 
 import (
-	"log"
-	"encoding/json"
-	"os"
-	"fmt"
 	"bufio"
+	"encoding/json"
+	"fmt"
 	"io"
 	"iter"
+	"log"
+	"os"
 )
 
 type FqEntry struct {
@@ -26,9 +26,9 @@ func ToFqEntry[F FqEnter](f F) FqEntry {
 	if ptr, ok := any(&f).(*FqEntry); ok {
 		return *ptr
 	}
-	return FqEntry {
+	return FqEntry{
 		FaEntry: ToFaEntry(f),
-		Qual: f.FqQual(),
+		Qual:    f.FqQual(),
 	}
 }
 

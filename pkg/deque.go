@@ -5,8 +5,8 @@ import (
 )
 
 type Deque[T any] struct {
-	data []T
-	start int
+	data   []T
+	start  int
 	length int
 }
 
@@ -38,14 +38,14 @@ func (d *Deque[T]) Get(i int) T {
 	if d.length <= i {
 		panic(fmt.Errorf("Deque.Get: i %v not a safe index; Deque.Len %v", i, d.Len()))
 	}
-	return d.data[(d.start + i) % len(d.data)]
+	return d.data[(d.start+i)%len(d.data)]
 }
 
 func (d *Deque[T]) Set(i int, val T) bool {
 	if d.length <= i {
 		return false
 	}
-	d.data[(d.start + i) % len(d.data)] = val
+	d.data[(d.start+i)%len(d.data)] = val
 	return true
 }
 

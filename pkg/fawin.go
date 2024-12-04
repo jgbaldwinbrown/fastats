@@ -25,7 +25,7 @@ func FaEntryWins[F FaEnter](fe F, size int64, step int64) iter.Seq[BedEntry[stri
 		for s := range wins {
 			fv := BedEntry[string]{
 				ChrSpan: ChrSpan{fe.FaHeader(), Span{s.Start, s.End}},
-				Fields: fe.FaSeq()[s.Start : s.End],
+				Fields:  fe.FaSeq()[s.Start:s.End],
 			}
 			if !yield(fv) {
 				return

@@ -1,17 +1,17 @@
 package fastats
 
 import (
-	"strconv"
-	"math"
+	"encoding/csv"
 	"fmt"
 	"io"
-	"encoding/csv"
 	"iter"
+	"math"
+	"strconv"
 )
 
 type Span struct {
 	Start int64
-	End int64
+	End   int64
 }
 
 func (s Span) SpanStart() int64 {
@@ -71,9 +71,9 @@ func ToBedEntry[B BedEnter[FieldsT], FieldsT any](b B) BedEntry[FieldsT] {
 	if val, ok := any(b).(BedEntry[FieldsT]); ok {
 		return val
 	}
-	return BedEntry[FieldsT] {
+	return BedEntry[FieldsT]{
 		ChrSpan: ToChrSpan(b),
-		Fields: b.BedFields(),
+		Fields:  b.BedFields(),
 	}
 }
 
@@ -177,7 +177,7 @@ func SpreadBed[B BedEnter[T], T any](it iter.Seq[B]) func(func(BedEntry[T]) bool
 				sub := BedEntry[T]{}
 				sub.Chr = b.SpanChr()
 				sub.Start = i
-				sub.End = i+1
+				sub.End = i + 1
 				sub.Fields = b.BedFields()
 				if !yield(sub) {
 					return
@@ -194,7 +194,7 @@ func SpreadBed2[B BedEnter[T], T any](it iter.Seq2[B, error]) func(func(BedEntry
 				sub := BedEntry[T]{}
 				sub.Chr = b.SpanChr()
 				sub.Start = i
-				sub.End = i+1
+				sub.End = i + 1
 				sub.Fields = b.BedFields()
 				if !yield(sub, e) {
 					return

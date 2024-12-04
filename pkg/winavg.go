@@ -1,12 +1,12 @@
 package fastats
 
 import (
-	"fmt"
-	"iter"
-	"github.com/montanaflynn/stats"
-	"os"
 	"flag"
+	"fmt"
+	"github.com/montanaflynn/stats"
+	"iter"
 	"log"
+	"os"
 )
 
 // func WindowSortedBed[B BedEnter[FT], FT any](it iter.Seq2[B, error], winsize, winstep int) func(func(BedEntry[[]B], error) bool) {

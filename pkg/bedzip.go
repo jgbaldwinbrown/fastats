@@ -1,13 +1,13 @@
 package fastats
 
 import (
-	"os"
-	"iter"
-	"fmt"
-	"log"
 	"bufio"
 	"flag"
+	"fmt"
 	"io"
+	"iter"
+	"log"
+	"os"
 
 	"github.com/jgbaldwinbrown/iterh"
 )
@@ -28,8 +28,8 @@ func BedZip[B1 BedEnter[[]string], B2 BedEnter[[]string]](it1 iter.Seq[B1], it2 
 type bedZipFlags struct {
 	Header1 bool
 	Header2 bool
-	Bed1 string
-	Bed2 string
+	Bed1    string
+	Bed2    string
 }
 
 func PassLine(r io.ByteReader, w io.ByteWriter) error {

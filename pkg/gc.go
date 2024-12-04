@@ -1,12 +1,12 @@
 package fastats
 
 import (
-	"io"
-	"fmt"
-	"flag"
 	"bufio"
-	"os"
+	"flag"
+	"fmt"
+	"io"
 	"iter"
+	"os"
 )
 
 func GCFrac(seq string) float64 {
@@ -14,15 +14,21 @@ func GCFrac(seq string) float64 {
 	bpCount := 0.0
 	for _, c := range []byte(seq) {
 		switch c {
-		case 'g': fallthrough
-		case 'G': fallthrough
-		case 'c': fallthrough
+		case 'g':
+			fallthrough
+		case 'G':
+			fallthrough
+		case 'c':
+			fallthrough
 		case 'C':
 			gcCount++
 			fallthrough
-		case 'a': fallthrough
-		case 'A': fallthrough
-		case 't': fallthrough
+		case 'a':
+			fallthrough
+		case 'A':
+			fallthrough
+		case 't':
+			fallthrough
 		case 'T':
 			bpCount++
 		case 'n':

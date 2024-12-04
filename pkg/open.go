@@ -1,11 +1,11 @@
 package fastats
 
 import (
+	"bufio"
 	"compress/gzip"
 	"io"
-	"bufio"
-	"regexp"
 	"os"
+	"regexp"
 )
 
 var gzRe = regexp.MustCompile(`\.gz$`)
@@ -24,7 +24,7 @@ func Open(path string) (*Reader, error) {
 	if e != nil {
 		return nil, e
 	}
-	return &Reader{ fp, bufio.NewReader(fp) }, nil
+	return &Reader{fp, bufio.NewReader(fp)}, nil
 }
 
 type GzReader struct {
@@ -99,7 +99,7 @@ func Create(path string) (*Writer, error) {
 	if e != nil {
 		return nil, e
 	}
-	return &Writer{ fp, bufio.NewWriter(fp) }, nil
+	return &Writer{fp, bufio.NewWriter(fp)}, nil
 }
 
 func CreateGz(path string) (*GzWriter, error) {

@@ -36,7 +36,7 @@ func ExtractOne(f FaEntry, s Span) (FaEntry, error) {
 	}
 	return FaEntry{
 		Header: fmt.Sprintf("%v:%v-%v", f.Header, s.Start, s.End),
-		Seq: f.Seq[s.Start:s.End],
+		Seq:    f.Seq[s.Start:s.End],
 	}, nil
 }
 

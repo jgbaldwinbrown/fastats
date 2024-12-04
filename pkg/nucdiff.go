@@ -1,30 +1,30 @@
 package fastats
 
 import (
-	"iter"
-	"os"
+	"encoding/csv"
 	"encoding/json"
 	"flag"
-	"io"
-	"encoding/csv"
-	"sort"
 	"fmt"
+	"io"
+	"iter"
+	"os"
 	"regexp"
+	"sort"
 )
 
 // ID=SNP_1;Name=gap;subst_len=1;query_dir=1;query_sequence=3R;query_coord=12-12;query_bases=N;ref_bases=t;color=#42C042
 
 type NucdiffAttr struct {
-	ID string
-	Name string
-	Len int
-	QueryDir int
-	QuerySeq string
+	ID         string
+	Name       string
+	Len        int
+	QueryDir   int
+	QuerySeq   string
 	QueryStart int
-	QueryEnd int
+	QueryEnd   int
 	QueryBases string
-	RefBases string
-	Color string
+	RefBases   string
+	Color      string
 }
 
 var nucdiffAttrRe = regexp.MustCompile(
@@ -45,14 +45,14 @@ func ParseNucdiffAttr(in string) (NucdiffAttr, error) {
 }
 
 type NucdiffGT struct {
-	Ref int
-	Alt int
+	Ref    int
+	Alt    int
 	Phased bool
 }
 
 type NucdiffData struct {
 	CrossNames []string
-	M map[ChrSpan]map[string]NucdiffAttr
+	M          map[ChrSpan]map[string]NucdiffAttr
 }
 
 func NucdiffReadGff[G GffEnter[NucdiffAttr]](d *NucdiffData, crossname string, it iter.Seq2[G, error]) error {
@@ -61,7 +61,7 @@ func NucdiffReadGff[G GffEnter[NucdiffAttr]](d *NucdiffData, crossname string, i
 		if e != nil {
 			return e
 		}
-			
+
 		m, ok := d.M[toChrSpan(g)]
 		if !ok {
 			m = map[string]NucdiffAttr{}
@@ -79,7 +79,9 @@ func NucdiffReadGffs(paths []string) (*NucdiffData, error) {
 	for _, path := range paths {
 		err := func() error {
 			r, e := OpenMaybeGz(path)
-			if e != nil { return e }
+			if e != nil {
+				return e
+			}
 			defer func() { Must(r.Close()) }()
 
 			return NucdiffReadGff(d, path, ParseGff(r, ParseNucdiffAttr))
@@ -101,7 +103,7 @@ func (f StringFormatter) Format(format string) string {
 // func MakeNucdiffVCFEntry(d *NucdiffData, c ChrSpan) (VcfEntry[StructuredInfoSamples[InfoPair[string], StringFormatter]], error) {
 // 	v := VcfEntry[StructuredInfoSamples[InfoPair[string], StringFormatter]]{}
 // 	v.ChrSpan = c
-// 	
+//
 // }
 
 func NucdiffReadVcf[V VcfHeader](d *NucdiffVcfData[V], crossname string, it iter.Seq2[V, error]) error {
@@ -132,7 +134,9 @@ func NucdiffReadVcfs(refname string, crossnames []string, paths []string) (*Nucd
 	for i, path := range paths {
 		err := func() error {
 			r, e := OpenMaybeGz(path)
-			if e != nil { return e }
+			if e != nil {
+				return e
+			}
 			defer func() { Must(r.Close()) }()
 
 			return NucdiffReadVcf[VcfEntry[struct{}]](d, crossnames[i], ParseSimpleVcf(r))
@@ -146,9 +150,9 @@ func NucdiffReadVcfs(refname string, crossnames []string, paths []string) (*Nucd
 }
 
 type NucdiffVcfData[V VcfHeader] struct {
-	RefName string
+	RefName    string
 	CrossNames []string
-	M map[ChrSpan]map[string]V
+	M          map[ChrSpan]map[string]V
 }
 
 func GetSortedChrSpans[V VcfHeader](d *NucdiffVcfData[V]) []ChrSpan {
@@ -218,29 +222,39 @@ func NucdiffWriteVcf[V VcfHeader](d *NucdiffVcfData[V], w io.Writer) error {
 	crossidxs := map[string]int{}
 	crossidxs[d.RefName] = 0
 	for i, name := range d.CrossNames {
-		crossidxs[name] = i+1
+		crossidxs[name] = i + 1
 	}
 
 	_, e := fmt.Fprintf(w, "#CHROM  POS     ID      REF     ALT     QUAL    FILTER	%v", d.RefName)
-	if e != nil { return e }
+	if e != nil {
+		return e
+	}
 
 	for _, crossname := range d.CrossNames {
 		_, e = fmt.Fprintf(w, "\t%v", crossname)
-		if e != nil { return e }
+		if e != nil {
+			return e
+		}
 	}
 
 	_, e = fmt.Fprintf(w, "\n")
-	if e != nil { return e }
+	if e != nil {
+		return e
+	}
 
 	var c []string
 	for _, cs := range chrspans {
 		v := MergeNucdiffVcfEntries(d, d.RefName, d.CrossNames, crossidxs, cs)
 
 		c, e := StructuredVcfEntryToCsv(c[:0], v)
-		if e != nil { return e }
+		if e != nil {
+			return e
+		}
 
 		e = cw.Write(c)
-		if e != nil { return e }
+		if e != nil {
+			return e
+		}
 	}
 
 	return nil

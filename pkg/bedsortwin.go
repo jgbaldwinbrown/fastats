@@ -1,23 +1,21 @@
 package fastats
 
 import (
+	"bufio"
+	"flag"
+	"fmt"
+	"github.com/montanaflynn/stats"
+	"io"
 	"iter"
 	"log"
-	"fmt"
-	"strconv"
-	"flag"
-	"sort"
-	"io"
-	"bufio"
-	"os"
 	"math"
-	"github.com/montanaflynn/stats"
+	"os"
+	"sort"
+	"strconv"
 )
 
 func ShouldFinishWin(win ChrSpan, next ChrSpan) bool {
-	return win.Chr != "" && (
-		win.Chr != next.Chr || (
-			win.End <= next.Start))
+	return win.Chr != "" && (win.Chr != next.Chr || (win.End <= next.Start))
 }
 
 func FullyLeftOf(x, y ChrSpan) bool {
@@ -214,7 +212,7 @@ func SortedBed[B ChrSpanner](it iter.Seq2[B, error]) ([]B, error) {
 }
 
 type BedSortWinFlags struct {
-	Sorted bool
+	Sorted  bool
 	Winsize int
 	Winstep int
 }

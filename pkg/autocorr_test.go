@@ -1,8 +1,8 @@
 package fastats
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 )
 
 func exampleBedGraph(y func(BedEntry[float64]) bool) {

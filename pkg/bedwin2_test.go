@@ -6,7 +6,7 @@ import (
 )
 
 func testingBed(y func(ChrSpan) bool) {
-	vals := []ChrSpan {
+	vals := []ChrSpan{
 		ChrSpan{Chr: "one", Span: Span{Start: 5, End: 8}},
 		ChrSpan{Chr: "one", Span: Span{Start: 6, End: 15}},
 		ChrSpan{Chr: "two", Span: Span{Start: 5, End: 8}},

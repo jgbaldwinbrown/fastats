@@ -1,11 +1,11 @@
 package fastats
 
 import (
-	"iter"
 	"flag"
-	"os"
-	"log"
 	"fmt"
+	"iter"
+	"log"
+	"os"
 	"strconv"
 
 	"github.com/jgbaldwinbrown/iterh"
@@ -43,7 +43,7 @@ func SplitChrs[C ChrSpanner](cit iter.Seq[C]) iter.Seq[iter.Seq[C]] {
 // 					return
 // 				}
 // 				for val, ok = p(); ok; val, ok = p() {
-// 					
+//
 // 				}
 // 			}
 // 		}
@@ -109,10 +109,10 @@ func AutoCorrelationWindows[B BedEnter[float64]](it iter.Seq[B], lags, winsize, 
 }
 
 type AutoCorrelationFlags struct {
-	Lag int
+	Lag     int
 	Winsize int
 	Winstep int
-	Col int
+	Col     int
 }
 
 func ColToFloat(col int) func([]string) (float64, error) {
@@ -148,7 +148,7 @@ func FullAutoCorrelationWindows() {
 	flag.Parse()
 
 	bed, errp := iterh.BreakWithError(ParseBed(os.Stdin, ColToFloat(f.Col)))
-	
+
 	a := AutoCorrelationWindows(bed, f.Lag, f.Winsize, f.Winstep)
 	for win := range a {
 		_, e := fmt.Printf("%v\t%v\t%v\t%v\n", win.Chr, win.Start, win.End, win.Fields)

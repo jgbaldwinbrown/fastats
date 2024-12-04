@@ -1,10 +1,10 @@
 package fastats
 
 import (
-	"os"
 	"bufio"
 	"fmt"
 	"log"
+	"os"
 )
 
 func FullToFa() {

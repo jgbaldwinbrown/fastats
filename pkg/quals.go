@@ -1,13 +1,13 @@
 package fastats
 
 import (
-	"os"
+	"bufio"
 	"encoding/json"
 	"golang.org/x/exp/slices"
-	"math"
 	"io"
-	"bufio"
 	"iter"
+	"math"
+	"os"
 )
 
 // q = -10 log_10(p)
@@ -38,7 +38,7 @@ func AppendQualsToAscii(w io.Writer, quals []int64) error {
 
 func QualScore(qual byte) float64 {
 	fqual := float64(qual - 33)
-	p := math.Pow(10, (-fqual) / 10)
+	p := math.Pow(10, (-fqual)/10)
 	return p
 }
 

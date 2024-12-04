@@ -1,21 +1,21 @@
 package fastats
 
 import (
-	"regexp"
+	"encoding/csv"
 	"fmt"
 	"io"
-	"encoding/csv"
 	"iter"
+	"regexp"
 )
 
 type GffHead struct {
 	ChrSpan
-	Source string
-	Type string
-	Score float64
+	Source   string
+	Type     string
+	Score    float64
 	HasScore bool
-	Strand byte
-	Phase int
+	Strand   byte
+	Phase    int
 	HasPhase bool
 }
 
@@ -31,11 +31,11 @@ type GffHeader interface {
 }
 
 func (g GffHead) GffSource() string { return g.Source }
-func (g GffHead) GffType() string { return g.Type }
+func (g GffHead) GffType() string   { return g.Type }
 func (g GffHead) GffScore() float64 { return g.Score }
 func (g GffHead) GffHasScore() bool { return g.HasScore }
-func (g GffHead) GffStrand() byte { return g.Strand }
-func (g GffHead) GffPhase() int { return g.Phase }
+func (g GffHead) GffStrand() byte   { return g.Strand }
+func (g GffHead) GffPhase() int     { return g.Phase }
 func (g GffHead) GffHasPhase() bool { return g.HasPhase }
 
 func ToGffHead[G GffHeader](g G) GffHead {
@@ -43,13 +43,13 @@ func ToGffHead[G GffHeader](g G) GffHead {
 		return *ptr
 	}
 	return GffHead{
-		ChrSpan: ToChrSpan(g),
-		Source: g.GffSource(),
-		Type: g.GffType(),
-		Score: g.GffScore(),
+		ChrSpan:  ToChrSpan(g),
+		Source:   g.GffSource(),
+		Type:     g.GffType(),
+		Score:    g.GffScore(),
 		HasScore: g.GffHasScore(),
-		Strand: g.GffStrand(),
-		Phase: g.GffPhase(),
+		Strand:   g.GffStrand(),
+		Phase:    g.GffPhase(),
 		HasPhase: g.GffHasPhase(),
 	}
 }
@@ -73,7 +73,7 @@ func ToGffEntry[G GffEnter[AttT], AttT any](g G) GffEntry[AttT] {
 		return *ptr
 	}
 	return GffEntry[AttT]{
-		GffHead: ToGffHead(g),
+		GffHead:    ToGffHead(g),
 		Attributes: g.GffAttributes(),
 	}
 }
@@ -137,7 +137,7 @@ func ParseGff[AT any](r io.Reader, attributeParse func(string) (AT, error)) iter
 }
 
 type AttributePair struct {
-	Tag string
+	Tag   string
 	Value string
 }
 

@@ -1,27 +1,27 @@
 package fastats
 
 import (
-	"regexp"
 	"encoding/csv"
-	"io"
 	"fmt"
-	"strings"
+	"io"
 	"iter"
+	"regexp"
+	"strings"
 )
 
 type VcfHead struct {
 	ChrSpan
-	ID string
-	Ref string
-	Alts []string
-	Qual int
+	ID     string
+	Ref    string
+	Alts   []string
+	Qual   int
 	Filter string
 }
 
-func (v VcfHead) VcfID() string { return v.ID }
-func (v VcfHead) VcfRef() string { return v.Ref }
+func (v VcfHead) VcfID() string     { return v.ID }
+func (v VcfHead) VcfRef() string    { return v.Ref }
 func (v VcfHead) VcfAlts() []string { return v.Alts }
-func (v VcfHead) VcfQual() int { return v.Qual }
+func (v VcfHead) VcfQual() int      { return v.Qual }
 func (v VcfHead) VcfFilter() string { return v.Filter }
 
 type VcfHeader interface {
@@ -39,11 +39,11 @@ func ToVcfHead[V VcfHeader](v V) VcfHead {
 	}
 	return VcfHead{
 		ChrSpan: ToChrSpan(v),
-		ID: v.VcfID(),
-		Ref: v.VcfRef(),
-		Alts: v.VcfAlts(),
-		Qual: v.VcfQual(),
-		Filter: v.VcfFilter(),
+		ID:      v.VcfID(),
+		Ref:     v.VcfRef(),
+		Alts:    v.VcfAlts(),
+		Qual:    v.VcfQual(),
+		Filter:  v.VcfFilter(),
 	}
 }
 
@@ -66,7 +66,7 @@ func ToVcfEntry[V VcfEnter[T], T any](v V) VcfEntry[T] {
 		return *ptr
 	}
 	return VcfEntry[T]{
-		VcfHead: ToVcfHead(v),
+		VcfHead:        ToVcfHead(v),
 		InfoAndSamples: v.VcfInfoAndSamples(),
 	}
 }
@@ -81,12 +81,12 @@ type Formatter interface {
 }
 
 type SampleSet[T Formatter] struct {
-	Format []string
+	Format  []string
 	Samples [][]T
 }
 
 type StructuredInfoSamples[InfoT any, SampleT Formatter] struct {
-	Info []InfoPair[InfoT]
+	Info    []InfoPair[InfoT]
 	Samples SampleSet[SampleT]
 }
 
@@ -99,7 +99,9 @@ func InfoToString[T any](is []InfoPair[T]) (string, error) {
 
 	if len(is) > 0 {
 		_, e := fmt.Fprintf(&b, "%v=%v", is[0].Key, is[0].Val)
-		if e != nil { return "", e }
+		if e != nil {
+			return "", e
+		}
 	}
 
 	if len(is) < 2 {
@@ -108,7 +110,9 @@ func InfoToString[T any](is []InfoPair[T]) (string, error) {
 
 	for _, info := range is[1:] {
 		_, e := fmt.Fprintf(&b, ";%v=%v", info.Key, info.Val)
-		if e != nil { return "", e }
+		if e != nil {
+			return "", e
+		}
 	}
 
 	return b.String(), nil
@@ -123,13 +127,17 @@ func FormatSample[T Formatter, S ~[]T](format []string, sample S) (string, error
 
 	if len(sample) > 0 {
 		_, e := fmt.Fprintf(&b, "%v", sample[0].Format(format[0]))
-		if e != nil { return "", e }
+		if e != nil {
+			return "", e
+		}
 	}
 	for i := 1; i < len(sample); i++ {
 		samp := sample[i]
 		form := format[i]
 		_, e := fmt.Fprintf(&b, ":%v", samp.Format(form))
-		if e != nil { return "", e }
+		if e != nil {
+			return "", e
+		}
 	}
 
 	return b.String(), nil
@@ -139,7 +147,9 @@ func AppendSamples[T Formatter](out []string, s SampleSet[T]) ([]string, error) 
 	out = append(out, strings.Join(s.Format, ":"))
 	for _, samp := range s.Samples {
 		str, err := FormatSample[T](s.Format, samp)
-		if err != nil { return nil, err }
+		if err != nil {
+			return nil, err
+		}
 
 		out = append(out, str)
 	}
@@ -208,4 +218,3 @@ func ParseSimpleVcf(r io.Reader) iter.Seq2[VcfEntry[struct{}], error] {
 		}
 	}
 }
-

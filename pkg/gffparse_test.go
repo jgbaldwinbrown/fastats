@@ -2,9 +2,9 @@ package fastats
 
 import (
 	"fmt"
-	"testing"
-	"strings"
 	"slices"
+	"strings"
+	"testing"
 
 	"github.com/jgbaldwinbrown/iterh"
 )

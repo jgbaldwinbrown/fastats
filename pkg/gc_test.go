@@ -1,9 +1,9 @@
 package fastats
 
 import (
-	"testing"
 	"fmt"
 	"strings"
+	"testing"
 )
 
 const infa = `>1

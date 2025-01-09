@@ -79,10 +79,12 @@ func SplitOneFq(path, pathOutdir, base, outsuffix string, entriesPerPiece int64)
 	s.Buffer([]byte{}, 1e15)
 	lines := make([]string, 0, 4)
 	for pathi := 0; ; pathi++ {
-		w, e := zfile.Create(filepath.Join(pathOutdir, fmt.Sprintf("%s_%04d%s", base, pathi, outsuffix)))
+		opath := filepath.Join(pathOutdir, fmt.Sprintf("%s_%04d%s", base, pathi, outsuffix))
+		w, e := zfile.Create(opath)
 		if e != nil {
 			return e
 		}
+		var written int64 = 0
 		var i int64
 		for i = 0; i < entriesPerPiece; i++ {
 			lines, e = AppendLines(lines[:0], s, 4)
@@ -98,9 +100,15 @@ func SplitOneFq(path, pathOutdir, base, outsuffix string, entriesPerPiece int64)
 				w.Close()
 				return e
 			}
+			written++
 		}
 		if e := w.Close(); e != nil {
 			return e
+		}
+		if written < 1 {
+			if e := os.Remove(opath); e != nil {
+				return e
+			}
 		}
 	}
 	return nil

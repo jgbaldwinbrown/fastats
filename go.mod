@@ -12,6 +12,7 @@ require github.com/jgbaldwinbrown/csvh v0.1.10
 
 require (
 	github.com/gammazero/deque v0.2.1 // indirect
+	github.com/jgbaldwinbrown/zfile v0.1.12 // indirect
 	github.com/ulikunitz/xz v0.5.12 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 )

@@ -90,14 +90,29 @@ func SplitOneFq(path, pathOutdir, base, outsuffix string, entriesPerPiece int64)
 			lines, e = AppendLines(lines[:0], s, 4)
 			if e == io.EOF {
 				w.Close()
+				if written < 1 {
+					if e := os.Remove(opath); e != nil {
+						return e
+					}
+				}
 				return nil
 			}
 			if e != nil {
 				w.Close()
+				if written < 1 {
+					if e := os.Remove(opath); e != nil {
+						return e
+					}
+				}
 				return e
 			}
 			if e := WriteLines(w, lines); e != nil {
 				w.Close()
+				if written < 1 {
+					if e := os.Remove(opath); e != nil {
+						return e
+					}
+				}
 				return e
 			}
 			written++

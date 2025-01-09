@@ -133,6 +133,9 @@ func SplitFq(pieces int, outdir string, paths ...string) error {
 	}
 	entries := lines / 4
 	entriesPerPiece := entries / int64(pieces)
+	if entries % int64(pieces) != 0 {
+		entriesPerPiece++
+	}
 
 	for _, path := range paths {
 		bigext := extRe.FindString(path)

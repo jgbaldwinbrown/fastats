@@ -56,7 +56,7 @@ func AppendLines(lines []string, s *bufio.Scanner, n int) ([]string, error) {
 
 func WriteLines(w io.Writer, lines []string) error {
 	for _, line := range lines {
-		if _, e := io.WriteString(w, line); e != nil {
+		if _, e := fmt.Fprintf(w, "%s\n", line); e != nil {
 			return e
 		}
 	}

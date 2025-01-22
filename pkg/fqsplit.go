@@ -152,7 +152,7 @@ func SplitFq(pieces int, outdir string, paths ...string) error {
 		}
 	}
 	if lines % 4 != 0 {
-		return fmt.Errorf("SplitFq: lines % 4 != 0; lines %v; lines % 4 = %v", lines, lines % 4)
+		return fmt.Errorf("SplitFq: lines %% 4 != 0; lines %v; lines %% 4 = %v", lines, lines % 4)
 	}
 	entries := lines / 4
 	entriesPerPiece := entries / int64(pieces)

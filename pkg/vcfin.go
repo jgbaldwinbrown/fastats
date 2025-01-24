@@ -64,3 +64,12 @@ func ParseVcf[T any](r io.Reader, f func(line []string) (T, error)) iter.Seq2[Vc
 		}
 	}
 }
+
+func ParseVcfFlat(r io.Reader) iter.Seq2[VcfEntry[[]string], error] {
+	return ParseVcf(r, func(line []string) ([]string, error) {
+		if len(line) <= 7 {
+			return []string{}, nil
+		}
+		return line[7:], nil
+	})
+}

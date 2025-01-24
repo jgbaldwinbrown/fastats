@@ -10,7 +10,7 @@ require (
 
 require (
 	github.com/jgbaldwinbrown/cfile v0.0.0-20250115213038-57da4d2f73c9
-	github.com/jgbaldwinbrown/csvh v0.1.10 // indirect
+	github.com/jgbaldwinbrown/csvh v0.1.10
 	github.com/jgbaldwinbrown/zfile v0.1.12
 )
 

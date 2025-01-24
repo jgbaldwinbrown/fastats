@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/jgbaldwinbrown/zfile"
 	"github.com/jgbaldwinbrown/iterh"
 )
 
@@ -66,13 +67,13 @@ func FullBedZip() {
 	flag.Parse()
 
 	var err error
-	r1, e := os.Open(f.Bed1)
+	r1, e := zfile.Open(f.Bed1)
 	if e != nil {
 		log.Fatal(e)
 	}
 	defer r1.Close()
 	br1 := bufio.NewReader(r1)
-	r2, e := os.Open(f.Bed2)
+	r2, e := zfile.Open(f.Bed2)
 	if e != nil {
 		log.Fatal(e)
 	}

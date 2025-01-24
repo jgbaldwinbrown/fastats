@@ -10,6 +10,8 @@ import (
 	"os"
 	"regexp"
 	"sort"
+
+	"github.com/jgbaldwinbrown/zfile"
 )
 
 // ID=SNP_1;Name=gap;subst_len=1;query_dir=1;query_sequence=3R;query_coord=12-12;query_bases=N;ref_bases=t;color=#42C042
@@ -78,7 +80,7 @@ func NucdiffReadGffs(paths []string) (*NucdiffData, error) {
 
 	for _, path := range paths {
 		err := func() error {
-			r, e := OpenMaybeGz(path)
+			r, e := zfile.Open(path)
 			if e != nil {
 				return e
 			}
@@ -133,7 +135,7 @@ func NucdiffReadVcfs(refname string, crossnames []string, paths []string) (*Nucd
 
 	for i, path := range paths {
 		err := func() error {
-			r, e := OpenMaybeGz(path)
+			r, e := zfile.Open(path)
 			if e != nil {
 				return e
 			}

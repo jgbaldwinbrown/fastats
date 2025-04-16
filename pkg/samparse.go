@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"strconv"
+	"regexp"
 
 	"github.com/jgbaldwinbrown/csvh"
 )
@@ -54,7 +55,7 @@ func ParseSamAlignment(line []string) (SamAlignment, error) {
 
 func ParseByteArray(s string) ([]byte, error) {
 	if len(s) % 2 != 0 {
-		return nil, fmt.Errorf("ParseByteArray: len(s) % 2 != 0; len(s) %v; s %v", len(s), s)
+		return nil, fmt.Errorf("ParseByteArray: len(s) %% 2 != 0; len(s) %v; s %v", len(s), s)
 	}
 	out := make([]byte, 0, len(s) / 2)
 	for i := 0; i < len(s); i += 2 {
@@ -182,6 +183,32 @@ func ParseSamEntry(s string) (SamEntry, error) {
 	}
 	a.Optional, e = ParseSamOptionals(line[11])
 	return a, e
+}
+
+type CIGAREntry struct {
+	Letter byte
+	Count int64
+}
+
+var cIGARRe = regexp.MustCompile(`([0-9]*)([MIDS])`)
+
+func ParseCIGAR(cigar string) ([]CIGAREntry, error) {
+	ms := cIGARRe.FindAllStringSubmatch(cigar, -1)
+	out := make([]CIGAREntry, 0, len(ms))
+	for _, m := range ms {
+		var ent CIGAREntry
+		var e error
+		ent.Count, e = strconv.ParseInt(m[1], 0, 64)
+		if e != nil {
+			return nil, e
+		}
+		if len(m[2]) != 1 {
+			return nil, fmt.Errorf("ParseCIGAR: len(m[2]) %v != 1; m[2] %v", len(m[2]), m[2])
+		}
+		ent.Letter = m[2][0]
+		out = append(out, ent)
+	}
+	return out, nil
 }
 
 // Col	Field	Type	Brief description

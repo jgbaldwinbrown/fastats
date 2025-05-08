@@ -125,8 +125,12 @@ func ParseBedEntry[FT any](line []string, fieldParse func([]string) (FT, error))
 		return b, fmt.Errorf("ParseBedEntry: len(line) %v < 3", len(line))
 	}
 
-	_, e := Scan(line[:3], &b.Chr, &b.Start, &b.End)
-	if e != nil {
+	var e error
+	b.Chr = line[0]
+	if b.Start, e = strconv.ParseInt(line[1], 0, 64); e != nil {
+		return b, e
+	}
+	if b.End, e = strconv.ParseInt(line[2], 0, 64); e != nil {
 		return b, e
 	}
 

@@ -39,8 +39,25 @@ func ParseNucdiffAttr(in string) (NucdiffAttr, error) {
 	if len(fields) < 11 {
 		return n, fmt.Errorf("len(fields) %v < 11", len(fields))
 	}
-	_, e := Scan(fields[1:], &n.ID, &n.Name, &n.Len, &n.QueryDir, &n.QuerySeq, &n.QueryStart, &n.QueryEnd, &n.QueryBases, &n.RefBases, &n.Color)
-	if e != nil {
+	var e error
+	f := fields
+
+	n.ID = f[1]
+	n.Name = f[2]
+	n.QuerySeq = f[5]
+	n.QueryBases = f[8]
+	n.RefBases = f[9]
+	n.Color = f[10]
+	if n.Len, e = strconv.Atoi(f[3]); e != nil {
+		return n, e
+	}
+	if n.QueryDir, e = strconv.Atoi(f[4]); e != nil {
+		return n, e
+	}
+	if n.QueryStart, e = strconv.Atoi(f[6]); e != nil {
+		return n, e
+	}
+	if n.QueryEnd, e = strconv.Atoi(f[7]); e != nil {
 		return n, e
 	}
 	return n, nil

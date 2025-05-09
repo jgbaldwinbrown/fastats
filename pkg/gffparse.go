@@ -1,6 +1,7 @@
 package fastats
 
 import (
+	"strconv"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -84,32 +85,39 @@ func ParseGffEntry[AT any](line []string, attributeParse func(string) (AT, error
 		return g, fmt.Errorf("ParseBedEntry: len(line) %v < 8", len(line))
 	}
 
-	var scoreStr string
-	var phaseStr string
-	var strandStr string
-	_, e := Scan(line[:8], &g.Chr, &g.Source, &g.Type, &g.Start, &g.End, &scoreStr, &strandStr, &phaseStr)
+	var e error
+	g.Chr = line[0]
+	g.Source = line[1]
+	g.Type = line[2]
+	g.Start, e = strconv.ParseInt(line[3], 0, 64)
 	if e != nil {
-		return g, fmt.Errorf("ParseGffEntry: Scan: %w", e)
-	}
-	if len(strandStr) > 0 {
-		g.Strand = strandStr[0]
+		return g, fmt.Errorf("ParseGffEntry: Start: %w", e)
 	}
 	g.Start--
+	g.End, e = strconv.ParseInt(line[4], 0, 64)
+	if e != nil {
+		return g, fmt.Errorf("ParseGffEntry: End: %w", e)
+	}
 
-	if scoreStr != "." {
+	if line[5] != "." {
 		g.HasScore = true
-		_, e := fmt.Sscanf(scoreStr, "%v", &g.Score)
+		g.Score, e = strconv.ParseFloat(line[5], 64)
 		if e != nil {
 			return g, fmt.Errorf("ParseGffEntry: Score: %w", e)
 		}
 	}
 
-	if phaseStr != "." {
+	if len(line[6]) > 0 {
+		g.Strand = line[6][0]
+	}
+
+	if line[7] != "." {
 		g.HasPhase = true
-		_, e := fmt.Sscanf(phaseStr, "%v", &g.Phase)
-		if e != nil {
+		tempPhase, e := strconv.ParseInt(line[7], 0, 64)
+		if  e != nil {
 			return g, fmt.Errorf("ParseGffEntry: Phase: %w", e)
 		}
+		g.Phase = int(tempPhase)
 	}
 
 	g.Attributes, e = attributeParse(line[8])

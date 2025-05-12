@@ -6,6 +6,7 @@ import (
 	"io"
 	"iter"
 	"strings"
+	"strconv"
 )
 
 func ParseVcfMainFields[T any](v *VcfEntry[T], line []string) error {
@@ -13,14 +14,24 @@ func ParseVcfMainFields[T any](v *VcfEntry[T], line []string) error {
 		return fmt.Errorf("ParseVcfMainFields: len(line) %v < 7", len(line))
 	}
 
-	_, e := ScanDot(line[:7], &v.Chr, &v.Start, &v.ID, &v.Ref, nil, &v.Qual, &v.Filter)
-	if e != nil {
-		return e
+	var e error
+	v.Chr = line[0]
+	if v.Start, e = strconv.ParseInt(line[1], 0, 64); e != nil {
+		return fmt.Errorf("ParseVcfMainFields: %w", e)
 	}
 	v.Start--
 	v.End = v.Start + 1
 
+	v.ID = line[2]
+	v.Ref = line[3]
 	v.Alts = strings.Split(line[4], ",")
+	if v.Qual, e = strconv.Atoi(line[5]); e != nil {
+		if line[5] != "." {
+			return fmt.Errorf("ParseVcfMainFields: %w", e)
+		}
+		v.Qual = 0
+	}
+	v.Filter = line[6]
 
 	return nil
 }

@@ -174,18 +174,9 @@ func StructuredVcfEntryToCsv[InfoT any, SampleT Formatter](buf []string, v VcfEn
 }
 
 func ParseVcfHead(line []string) (VcfHead, error) {
-	var v VcfHead
-	v.Alts = make([]string, 1)
-	if len(line) < 7 {
-		return v, fmt.Errorf("ParseSimpleVcfEntry: len(line) %v < 7", len(line))
-	}
-	_, e := ScanDot(line[:7], &v.Chr, &v.Start, &v.ID, &v.Ref, &v.Alts[0], &v.Qual, &v.Filter)
-	if e != nil {
-		return v, e
-	}
-	v.Start--
-	v.End = v.Start + 1
-	return v, nil
+	var v VcfEntry[struct{}]
+	e := ParseVcfMainFields(&v, line)
+	return v.VcfHead, e
 }
 
 func ParseSimpleVcfEntry(line []string) (VcfEntry[struct{}], error) {

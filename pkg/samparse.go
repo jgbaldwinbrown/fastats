@@ -47,7 +47,6 @@ type SamEntry struct {
 
 func ParseSamAlignment(line []string) (SamAlignment, error) {
 	var a SamAlignment
-	// _, e := csvh.Scan(line, &a.Qname, &a.Flag, &a.Rname, &a.Pos, &a.Mapq, &a.CIGAR, &a.Rnext, &a.Pnext, &a.Tlen, &a.Seq, &a.Qual)
 	if len(line) < 11 {
 		return a, fmt.Errorf("ParseSamAlignment: len(line) %v < 11; line %v", len(line), line)
 	}

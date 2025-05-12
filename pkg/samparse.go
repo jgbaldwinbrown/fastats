@@ -5,8 +5,6 @@ import (
 	"strings"
 	"strconv"
 	"regexp"
-
-	"github.com/jgbaldwinbrown/csvh"
 )
 
 func ParseSamHeading(s string) SamEntry {
@@ -49,8 +47,34 @@ type SamEntry struct {
 
 func ParseSamAlignment(line []string) (SamAlignment, error) {
 	var a SamAlignment
-	_, e := csvh.Scan(line, &a.Qname, &a.Flag, &a.Rname, &a.Pos, &a.Mapq, &a.CIGAR, &a.Rnext, &a.Pnext, &a.Tlen, &a.Seq, &a.Qual)
-	return a, e
+	// _, e := csvh.Scan(line, &a.Qname, &a.Flag, &a.Rname, &a.Pos, &a.Mapq, &a.CIGAR, &a.Rnext, &a.Pnext, &a.Tlen, &a.Seq, &a.Qual)
+	if len(line) < 11 {
+		return a, fmt.Errorf("ParseSamAlignment: len(line) %v < 11; line %v", len(line), line)
+	}
+	a.Qname = line[0]
+	flag64, e := strconv.ParseUint(line[1], 0, 64)
+	if e != nil {
+		return a, e
+	}
+	a.Flag = uint16(flag64)
+	a.Rname = line[2]
+	if a.Pos, e = strconv.ParseInt(line[3], 0, 64); e != nil {
+		return a, e
+	}
+	if a.Mapq, e = strconv.ParseInt(line[4], 0, 64); e != nil {
+		return a, e
+	}
+	a.CIGAR = line[5]
+	a.Rnext = line[6]
+	if a.Pnext, e = strconv.ParseInt(line[7], 0, 64); e != nil {
+		return a, e
+	}
+	if a.Tlen, e = strconv.ParseInt(line[8], 0, 64); e != nil {
+		return a, e
+	}
+	a.Seq = line[9]
+	a.Qual = line[10]
+	return a, nil
 }
 
 func ParseByteArray(s string) ([]byte, error) {

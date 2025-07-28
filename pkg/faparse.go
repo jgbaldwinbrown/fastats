@@ -110,11 +110,17 @@ func PrintFaLen(w io.Writer, l FaLen) error {
 func FullChrlens() {
 	fa := ParseFasta(os.Stdin)
 	lens := Chrlens(fa)
+	w := bufio.NewWriter(os.Stdout)
+	defer func() {
+		if e := w.Flush(); e != nil {
+			log.Fatal(e)
+		}
+	}()
 	for l, e := range lens {
 		if e != nil {
 			log.Fatal(e)
 		}
-		if e := PrintFaLen(os.Stdout, l); e != nil {
+		if e := PrintFaLen(w, l); e != nil {
 			log.Fatal(e)
 		}
 	}

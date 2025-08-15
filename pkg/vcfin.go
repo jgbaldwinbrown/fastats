@@ -149,8 +149,9 @@ func ParseStandardVcfInfoAndSamples(line []string) (StandardVcfInfoAndSamples, e
 		s.Samples = append(s.Samples, strings.Split(line[i], ","))
 	}
 	for i := 9; i < len(line); i++ {
-		if len(s.Samples[len(s.Samples)-1]) != len(s.Format) {
-			return s, fmt.Errorf("%w: len(s.Samples[%v]) %v, %v != len(s.Format) %v, %v", ErrVcfFormat, i, len(s.Samples[i]), s.Samples[i], len(s.Format), s.Format)
+		for len(s.Samples[len(s.Samples)-1]) < len(s.Format) {
+			s.Samples[len(s.Samples)-1] = append(s.Samples[len(s.Samples)-1], "")
+			// return s, fmt.Errorf("%w: len(s.Samples[%v]) %v, %v != len(s.Format) %v, %v", ErrVcfFormat, i, len(s.Samples[i]), s.Samples[i], len(s.Format), s.Format)
 		}
 	}
 	return s, nil

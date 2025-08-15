@@ -1,10 +1,12 @@
 package fastats
 
 import (
+	"errors"
 	"encoding/csv"
 	"fmt"
 	"io"
 	"iter"
+	"slices"
 	"strings"
 	"strconv"
 )
@@ -81,6 +83,45 @@ func ParseVcfFlat(r io.Reader) iter.Seq2[VcfEntry[[]string], error] {
 		if len(line) <= 7 {
 			return []string{}, nil
 		}
-		return line[7:], nil
+		return slices.Clone(line[7:]), nil
 	})
+}
+
+type StandardVcfInfoAndSamples struct {
+	InfoKeys []string
+	InfoVals []string
+	Format []string
+	Samples [][]string
+}
+
+var ErrVcfFormat = errors.New("Vcf format error")
+
+func ParseInfo(info string) (keys, vals []string) {
+	fields := strings.Split(info, ";")
+	keys = make([]string, 0, len(fields))
+	vals = make([]string, 0, len(fields))
+	for _, field := range fields {
+		key, val, _ := strings.Cut(field, "=")
+		keys = append(keys, key)
+		vals = append(vals, val)
+	}
+	return keys, vals
+}
+
+func ParseStandardVcfInfoAndSamples(line []string) (StandardVcfInfoAndSamples, error) {
+	if len(line) < 7 {
+		return StandardVcfInfoAndSamples{}, nil
+	}
+	var s StandardVcfInfoAndSamples
+	s.InfoKeys, s.InfoVals = ParseInfo(line[7])
+	s.Format = strings.Split(line[8], ":")
+	for i := 9; i < len(line); i++ {
+		s.Samples = append(s.Samples, strings.Split(line[i], ","))
+	}
+	for i := 9; i < len(line); i++ {
+		if len(s.Samples[len(s.Samples)-1]) != len(s.Format) {
+			return s, fmt.Errorf("%w: len(s.Samples[%v]) %v, %v != len(s.Format) %v, %v", ErrVcfFormat, i, len(s.Samples[i]), s.Samples[i], len(s.Format), s.Format)
+		}
+	}
+	return s, nil
 }

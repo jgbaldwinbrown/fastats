@@ -14,14 +14,14 @@ type VcfHead struct {
 	ID     string
 	Ref    string
 	Alts   []string
-	Qual   int
+	Qual   float64
 	Filter string
 }
 
 func (v VcfHead) VcfID() string     { return v.ID }
 func (v VcfHead) VcfRef() string    { return v.Ref }
 func (v VcfHead) VcfAlts() []string { return v.Alts }
-func (v VcfHead) VcfQual() int      { return v.Qual }
+func (v VcfHead) VcfQual() float64      { return v.Qual }
 func (v VcfHead) VcfFilter() string { return v.Filter }
 
 type VcfHeader interface {
@@ -29,7 +29,7 @@ type VcfHeader interface {
 	VcfID() string
 	VcfRef() string
 	VcfAlts() []string
-	VcfQual() int
+	VcfQual() float64
 	VcfFilter() string
 }
 

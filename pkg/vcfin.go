@@ -28,7 +28,7 @@ func ParseVcfMainFields[T any](v *VcfEntry[T], line []string) error {
 	v.ID = line[2]
 	v.Ref = line[3]
 	v.Alts = strings.Split(line[4], ",")
-	if v.Qual, e = strconv.Atoi(line[5]); e != nil {
+	if v.Qual, e = strconv.ParseFloat(line[5], 64); e != nil {
 		if line[5] != "." {
 			return fmt.Errorf("ParseVcfMainFields: %w", e)
 		}

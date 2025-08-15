@@ -1,6 +1,7 @@
 package fastats
 
 import (
+	"regexp"
 	"errors"
 	"encoding/csv"
 	"fmt"
@@ -54,14 +55,8 @@ func ParseVcfEntry[T any](line []string, f func(line []string) (T, error)) (VcfE
 	return v, nil
 }
 
-func ParseVcf[T any](r io.Reader, f func(line []string) (T, error)) iter.Seq2[VcfEntry[T], error] {
+func ParseVcfCore[T any](cr *csv.Reader, f func(line []string) (T, error)) iter.Seq2[VcfEntry[T], error] {
 	return func(yield func(VcfEntry[T], error) bool) {
-		cr := csv.NewReader(r)
-		cr.LazyQuotes = true
-		cr.Comma = rune('\t')
-		cr.ReuseRecord = true
-		cr.FieldsPerRecord = -1
-
 		for l, e := cr.Read(); e != io.EOF; l, e = cr.Read() {
 			if len(l) < 7 {
 				continue
@@ -76,6 +71,41 @@ func ParseVcf[T any](r io.Reader, f func(line []string) (T, error)) iter.Seq2[Vc
 			}
 		}
 	}
+}
+
+func ParseVcf[T any](r io.Reader, f func(line []string) (T, error)) iter.Seq2[VcfEntry[T], error] {
+	cr := csv.NewReader(r)
+	cr.LazyQuotes = true
+	cr.Comma = rune('\t')
+	cr.ReuseRecord = true
+	cr.FieldsPerRecord = -1
+
+	return ParseVcfCore(cr, f)
+}
+
+var chromRe = regexp.MustCompile(`^#CHROM`)
+
+func ParseVcfPlusHeader[T any](r io.Reader, f func(line []string) (T, error)) ([]string, iter.Seq2[VcfEntry[T], error], error) {
+	cr := csv.NewReader(r)
+	cr.LazyQuotes = true
+	cr.Comma = rune('\t')
+	cr.ReuseRecord = true
+	cr.FieldsPerRecord = -1
+	var header []string
+
+	for l, e := cr.Read(); e != io.EOF; l, e = cr.Read() {
+		if len(l) > 0 && chromRe.MatchString(l[0]) {
+			header = slices.Clone(l)
+			break
+		}
+		if len(l) < 7 {
+			continue
+		}
+		if len(l) > 0 && commentRe.MatchString(l[0]) {
+			continue
+		}
+	}
+	return header, ParseVcfCore(cr, f), nil
 }
 
 func ParseVcfFlat(r io.Reader) iter.Seq2[VcfEntry[[]string], error] {

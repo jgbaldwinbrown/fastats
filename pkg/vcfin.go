@@ -117,7 +117,7 @@ func ParseVcfFlat(r io.Reader) iter.Seq2[VcfEntry[[]string], error] {
 	})
 }
 
-type StandardVcfInfoAndSamples struct {
+type VcfInfoSamples struct {
 	InfoKeys []string
 	InfoVals []string
 	Format []string
@@ -138,11 +138,11 @@ func ParseInfo(info string) (keys, vals []string) {
 	return keys, vals
 }
 
-func ParseStandardVcfInfoAndSamples(line []string) (StandardVcfInfoAndSamples, error) {
+func ParseVcfInfoSamples(line []string) (VcfInfoSamples, error) {
 	if len(line) < 7 {
-		return StandardVcfInfoAndSamples{}, nil
+		return VcfInfoSamples{}, nil
 	}
-	var s StandardVcfInfoAndSamples
+	var s VcfInfoSamples
 	s.InfoKeys, s.InfoVals = ParseInfo(line[7])
 	s.Format = strings.Split(line[8], ":")
 	for i := 9; i < len(line); i++ {

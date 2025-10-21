@@ -6,16 +6,33 @@ import (
 	"fmt"
 	"log"
 	"bufio"
+	"flag"
+	"iter"
 )
 
+type FullRpkmFlags struct {
+	BedPath string
+	TotalCoverage float64
+}
+
 func FullRpkm() {
-	if len(os.Args) < 2 {
-		fmt.Printf("usage: %v bed.bed \n", os.Args[0])
-		log.Fatal(fmt.Errorf("Not enough args: %v", os.Args))
+	var f FullRpkmFlags
+	flag.StringVar(&f.BedPath, "bed", "", "Input bed file (required).")
+	flag.Float64Var(&f.TotalCoverage, "cov", -1.0, "Total coverage to substitute for the one calculated by the program.")
+	flag.Parse()
+
+	if f.BedPath == "" {
+		log.Fatal(fmt.Errorf("Missing -bed option"))
 	}
 	cov1, errp1 := iterh.BreakWithError(iterh.PathIter(os.Args[1], ParseBedGraph))
 	scov1 := SpreadBed(cov1)
-	rpkm1, _ := RpkmAndTotal(scov1)
+
+	var rpkm1 iter.Seq[BedEntry[float64]]
+	if f.TotalCoverage < 0.0 {
+		rpkm1, _ = RpkmAndTotal(scov1)
+	} else {
+		rpkm1 = Rpkm(scov1, f.TotalCoverage)
+	}
 
 	w := bufio.NewWriter(os.Stdout)
 	defer func() {

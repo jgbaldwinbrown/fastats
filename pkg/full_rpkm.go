@@ -24,7 +24,7 @@ func FullRpkm() {
 	if f.BedPath == "" {
 		log.Fatal(fmt.Errorf("Missing -bed option"))
 	}
-	cov1, errp1 := iterh.BreakWithError(iterh.PathIter(os.Args[1], ParseBedGraph))
+	cov1, errp1 := iterh.BreakWithError(iterh.PathIter(f.BedPath, ParseBedGraph))
 	scov1 := SpreadBed(cov1)
 
 	var rpkm1 iter.Seq[BedEntry[float64]]

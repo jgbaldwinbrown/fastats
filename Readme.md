@@ -24,4 +24,17 @@ To install the latest version of this library, just use:
 go get github.com/jgbaldwinbrown/fastats/pkg
 ```
 
-## 
+Then, to install any of the command line tools, do the following:
+
+```sh
+cd fastats
+go install cmd/[tool]
+```
+
+If that doesn't work, manually install the tool as follows:
+
+```sh
+cd fastats
+go build cmd/[tool]/[tool].go
+cp [tool] /usr/bin/
+```

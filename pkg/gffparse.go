@@ -82,7 +82,7 @@ func ToGffEntry[G GffEnter[AttT], AttT any](g G) GffEntry[AttT] {
 func ParseGffEntry[AT any](line []string, attributeParse func(string) (AT, error)) (GffEntry[AT], error) {
 	var g GffEntry[AT]
 	if len(line) < 8 {
-		return g, fmt.Errorf("ParseBedEntry: len(line) %v < 8", len(line))
+		return g, fmt.Errorf("ParseGffEntry: len(line) %v < 8", len(line))
 	}
 
 	var e error
@@ -136,6 +136,9 @@ func ParseGff[AT any](r io.Reader, attributeParse func(string) (AT, error)) iter
 		cr.FieldsPerRecord = -1
 
 		for l, e := cr.Read(); e != io.EOF; l, e = cr.Read() {
+			if len(l) < 1 || commentRe.MatchString(l[0]) {
+				continue
+			}
 			b, e := ParseGffEntry(l, attributeParse)
 			if !yield(b, e) {
 				return

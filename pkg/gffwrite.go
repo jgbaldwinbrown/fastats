@@ -43,7 +43,11 @@ func WriteGffEntry[G GffEnter[T], T any](w io.Writer, g G, f func(io.Writer, T) 
 
 func WriteGffAttributePairs(w io.Writer, pairs []AttributePair) error {
 	for i, p := range pairs {
-		if i > 0 {
+		if i <= 0 {
+			if _, e := fmt.Fprintf(w, "\t"); e != nil {
+				return e
+			}
+		} else {
 			if _, e := fmt.Fprintf(w, ";"); e != nil {
 				return e
 			}

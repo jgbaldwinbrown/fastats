@@ -1,6 +1,7 @@
 package fastats
 
 import (
+	"strings"
 	"strconv"
 	"encoding/csv"
 	"fmt"
@@ -127,8 +128,8 @@ func ParseGffEntry[AT any](line []string, attributeParse func(string) (AT, error
 	return g, nil
 }
 
-func ParseGff[AT any](r io.Reader, attributeParse func(string) (AT, error)) iter.Seq2[GffEntry[AT], error] {
-	return func(yield func(GffEntry[AT], error) bool) {
+func ParseGff[AT any](r io.Reader, attributeParse func(string) (AT, error)) iter.Seq2[OrComment[GffEntry[AT]], error] {
+	return func(yield func(OrComment[GffEntry[AT]], error) bool) {
 		cr := csv.NewReader(r)
 		cr.LazyQuotes = true
 		cr.Comma = rune('\t')
@@ -136,11 +137,37 @@ func ParseGff[AT any](r io.Reader, attributeParse func(string) (AT, error)) iter
 		cr.FieldsPerRecord = -1
 
 		for l, e := cr.Read(); e != io.EOF; l, e = cr.Read() {
-			if len(l) < 1 || commentRe.MatchString(l[0]) {
+			if len(l) < 1 {
 				continue
 			}
+			if commentRe.MatchString(l[0]) {
+				comment, _ := strings.CutPrefix(strings.Join(l, "\t"), "#")
+				if !yield(OrComment[GffEntry[AT]]{Comment: comment, IsComment: true}, e) {
+					return
+				}
+			}
 			b, e := ParseGffEntry(l, attributeParse)
-			if !yield(b, e) {
+			if !yield(OrComment[GffEntry[AT]]{Value: b}, e) {
+				return
+			}
+		}
+	}
+}
+
+func ParseGffNoComment[AT any](r io.Reader, attributeParse func(string) (AT, error)) iter.Seq2[GffEntry[AT], error] {
+	return func(yield func(GffEntry[AT], error) bool) {
+		for orc, err := range ParseGff(r, attributeParse) {
+			if err != nil {
+				if !yield(orc.Value, err) {
+					return
+				}
+				continue
+			}
+			if orc.IsComment {
+				continue
+			}
+
+			if !yield(orc.Value, nil) {
 				return
 			}
 		}
@@ -164,5 +191,5 @@ func ParseAttributePairs(field string) ([]AttributePair, error) {
 }
 
 func ParseGffFlat(r io.Reader) iter.Seq2[GffEntry[[]AttributePair], error] {
-	return ParseGff(r, ParseAttributePairs)
+	return ParseGffNoComment(r, ParseAttributePairs)
 }

@@ -104,7 +104,7 @@ func NucdiffReadGffs(paths []string) (*NucdiffData, error) {
 			}
 			defer func() { Must(r.Close()) }()
 
-			return NucdiffReadGff(d, path, ParseGff(r, ParseNucdiffAttr))
+			return NucdiffReadGff(d, path, ParseGffNoComment(r, ParseNucdiffAttr))
 		}()
 		if err != nil {
 			return nil, err

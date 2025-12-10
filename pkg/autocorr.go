@@ -147,7 +147,7 @@ func FullAutoCorrelationWindows() {
 	flag.IntVar(&f.Col, "c", 0, "Field column to correlate")
 	flag.Parse()
 
-	bed, errp := iterh.BreakWithError(ParseBed(os.Stdin, ColToFloat(f.Col)))
+	bed, errp := iterh.BreakWithError(ParseBedNoComment(os.Stdin, ColToFloat(f.Col)))
 
 	a := AutoCorrelationWindows(bed, f.Lag, f.Winsize, f.Winstep)
 	for win := range a {

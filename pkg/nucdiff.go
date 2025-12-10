@@ -1,6 +1,7 @@
 package fastats
 
 import (
+	"strconv"
 	"encoding/csv"
 	"encoding/json"
 	"flag"
@@ -10,6 +11,8 @@ import (
 	"os"
 	"regexp"
 	"sort"
+
+	"github.com/jgbaldwinbrown/zfile"
 )
 
 // ID=SNP_1;Name=gap;subst_len=1;query_dir=1;query_sequence=3R;query_coord=12-12;query_bases=N;ref_bases=t;color=#42C042
@@ -37,8 +40,25 @@ func ParseNucdiffAttr(in string) (NucdiffAttr, error) {
 	if len(fields) < 11 {
 		return n, fmt.Errorf("len(fields) %v < 11", len(fields))
 	}
-	_, e := Scan(fields[1:], &n.ID, &n.Name, &n.Len, &n.QueryDir, &n.QuerySeq, &n.QueryStart, &n.QueryEnd, &n.QueryBases, &n.RefBases, &n.Color)
-	if e != nil {
+	var e error
+	f := fields
+
+	n.ID = f[1]
+	n.Name = f[2]
+	n.QuerySeq = f[5]
+	n.QueryBases = f[8]
+	n.RefBases = f[9]
+	n.Color = f[10]
+	if n.Len, e = strconv.Atoi(f[3]); e != nil {
+		return n, e
+	}
+	if n.QueryDir, e = strconv.Atoi(f[4]); e != nil {
+		return n, e
+	}
+	if n.QueryStart, e = strconv.Atoi(f[6]); e != nil {
+		return n, e
+	}
+	if n.QueryEnd, e = strconv.Atoi(f[7]); e != nil {
 		return n, e
 	}
 	return n, nil
@@ -78,13 +98,13 @@ func NucdiffReadGffs(paths []string) (*NucdiffData, error) {
 
 	for _, path := range paths {
 		err := func() error {
-			r, e := OpenMaybeGz(path)
+			r, e := zfile.Open(path)
 			if e != nil {
 				return e
 			}
 			defer func() { Must(r.Close()) }()
 
-			return NucdiffReadGff(d, path, ParseGff(r, ParseNucdiffAttr))
+			return NucdiffReadGff(d, path, ParseGffNoComment(r, ParseNucdiffAttr))
 		}()
 		if err != nil {
 			return nil, err
@@ -133,7 +153,7 @@ func NucdiffReadVcfs(refname string, crossnames []string, paths []string) (*Nucd
 
 	for i, path := range paths {
 		err := func() error {
-			r, e := OpenMaybeGz(path)
+			r, e := zfile.Open(path)
 			if e != nil {
 				return e
 			}

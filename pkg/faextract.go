@@ -27,6 +27,10 @@ func CollectChrSpanMap[C ChrSpanner](cit iter.Seq2[C, error]) (map[string][]Span
 	return m, nil
 }
 
+func NameSpan(chr string, start, end int64) string {
+	return fmt.Sprintf("%v:%v-%v", chr, start, end)
+}
+
 func ExtractOne(f FaEntry, s Span) (FaEntry, error) {
 	if s.Start < 0 || s.Start >= int64(len(f.Seq)) {
 		return FaEntry{}, fmt.Errorf("ExtractOne: s.Start %v out of range of len(f.Seq) %v", s.Start, len(f.Seq))
@@ -35,31 +39,53 @@ func ExtractOne(f FaEntry, s Span) (FaEntry, error) {
 		return FaEntry{}, fmt.Errorf("ExtractOne: s.End %v out of range of len(f.Seq) %v", s.End, len(f.Seq))
 	}
 	return FaEntry{
-		Header: fmt.Sprintf("%v:%v-%v", f.Header, s.Start, s.End),
+		Header: NameSpan(f.Header, s.Start, s.End),
 		Seq:    f.Seq[s.Start:s.End],
 	}, nil
 }
 
-func ExtractFasta[F FaEnter, C ChrSpanner](fit iter.Seq2[F, error], cit iter.Seq2[C, error]) iter.Seq2[FaEntry, error] {
-	return func(yield func(FaEntry, error) bool) {
-		m, e := CollectChrSpanMap(cit)
+type ChrSpanFa[C ChrSpanner, F FaEnter] struct {
+	ChrSpanner C
+	FaEnter F
+}
+
+func ExtractChrSpanFa[F FaEnter, C ChrSpanner](fit iter.Seq2[F, error], cit iter.Seq2[C, error]) iter.Seq2[ChrSpanFa[C, F], error] {
+	return func(yield func(ChrSpanFa[C, F], error) bool) {
+		m, e := CollectChrSpannerMap(cit)
 		if e != nil {
-			if !yield(FaEntry{}, e) {
+			if !yield(ChrSpanFa[C,F]{}, e) {
 				return
 			}
 		}
 		for f, err := range fit {
 			if err != nil {
-				if !yield(FaEntry{}, e) {
+				if !yield(ChrSpanFa[C,F]{}, e) {
 					return
 				}
 			}
 			spans := m[f.FaHeader()]
 			for _, span := range spans {
-				out, e := ExtractOne(toFaEntry(f), span)
-				if !yield(out, e) {
+				out := ChrSpanFa[C, F]{ChrSpanner: span, FaEnter: f}
+				if !yield(out, nil) {
 					return
 				}
+			}
+		}
+	}
+}
+
+func ExtractFasta[F FaEnter, C ChrSpanner](fit iter.Seq2[F, error], cit iter.Seq2[C, error]) iter.Seq2[FaEntry, error] {
+	return func(yield func(FaEntry, error) bool) {
+		for csf, e := range ExtractChrSpanFa(fit, cit) {
+			if e != nil {
+				if !yield(FaEntry{}, e) {
+					return
+				}
+				continue
+			}
+			fa, e := ExtractOne(ToFaEntry(csf.FaEnter), ToSpan(csf.ChrSpanner))
+			if !yield(fa, e) {
+				return
 			}
 		}
 	}

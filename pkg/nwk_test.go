@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-const testNwk = "(,A,B:5,:6)C;"
+const testNwk = "(,A [banana is good],B:5,:6)C;"
 
 func TestParseNewick(t *testing.T) {
 	n, e := ParseNewick(strings.NewReader(testNwk))

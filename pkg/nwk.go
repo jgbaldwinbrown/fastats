@@ -34,10 +34,14 @@ func (t sstring) isToken(){}
 type num float64
 func (t num) isToken(){}
 
+type comment string
+func (t comment) isToken(){}
+
 type Newick struct {
 	Name string
 	Length float64
 	Children []*Newick
+	Comment string
 }
 
 type runeReadUnreader interface {
@@ -73,12 +77,14 @@ func (tr *tokenReader) ReadToken() (t token, err error) {
 			}
 			return tr.tokenizeNum()
 		}
+
 		switch r {
 		case '(': return lparen{}, nil
 		case ')': return rparen{}, nil
 		case ',': return comma{}, nil
 		case ';': return semicolon{}, nil
 		case ':': return colon{}, nil
+		case '[': return tr.tokenizeComment()
 		default:
 		}
 	}
@@ -102,6 +108,29 @@ func (tr *tokenReader) tokenizeString() (sstring, error) {
 		b.WriteRune(r)
 	}
 	return sstring(b.String()), nil
+}
+
+func (tr *tokenReader) tokenizeComment() (comment, error) {
+	var b strings.Builder
+	for {
+		r, _, e := tr.r.ReadRune()
+		if e != nil {
+			return comment(b.String()), io.EOF
+		}
+		if r == '[' {
+			extra, e := tr.tokenizeComment()
+			b.WriteString(string(extra))
+			if e != nil {
+				return comment(b.String()), e
+			}
+			continue
+		}
+		if r == ']' {
+			break
+		}
+		b.WriteRune(r)
+	}
+	return comment(b.String()), nil
 }
 
 func (tr *tokenReader) tokenizeNumberString() (string, error) {
@@ -184,6 +213,8 @@ func parseNewick(tr *tokenReader) (*Newick, error) {
 				return n, fmt.Errorf("parseNewick: colon followed by non-number %v", t2)
 			}
 			n.Length = float64(num)
+		case comment:
+			n.Comment = string(v)
 		case lparen:
 			n.Children, e = parseChildren(tr)
 			if e != nil {
@@ -232,6 +263,13 @@ func printNewick(w io.Writer, n *Newick, indent int) (nw int, err error) {
 	nw += nwrit
 	if e != nil {
 		return nw, e
+	}
+	if n.Comment != "" {
+		nwrit, e := fmt.Fprintf(w, "[%v]", n.Comment)
+		nw += nwrit
+		if e != nil {
+			return nw, e
+		}
 	}
 	if len(n.Children) < 1 {
 		nwrit, e := fmt.Fprintf(w, ")\n")
@@ -293,6 +331,13 @@ func PrintNewick(w io.Writer, n *Newick) (nw int, err error) {
 	}
 	if len(n.Name) > 0 {
 		nwrit, e := fmt.Fprintf(w, "%s", n.Name)
+		nw += nwrit
+		if e != nil {
+			return nw, e
+		}
+	}
+	if n.Comment != "" {
+		nwrit, e := fmt.Fprintf(w, "[%v]", n.Comment)
 		nw += nwrit
 		if e != nil {
 			return nw, e

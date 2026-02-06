@@ -234,6 +234,107 @@ func ParseCIGAR(cigar string) ([]CIGAREntry, error) {
 	return out, nil
 }
 
+type CIGARStyle int
+
+const (
+	CIGARLeft CIGARStyle = iota
+	CIGARRight CIGARStyle = iota
+	CIGARLongest CIGARStyle = iota
+)
+
+func simplifyCIGARBase(dst []CIGAREntry, cigar []CIGAREntry, bpthresh int64) []CIGAREntry {
+	for _, c := range cigar {
+		var d *CIGAREntry
+		if len(dst) > 0 {
+			d = &dst[len(dst)-1]
+		}
+
+		if c.Count < bpthresh {
+			c.Letter = 'Z'
+		}
+		if c.Letter == 'Z' && d != nil && d.Letter == 'Z' {
+			d.Count += c.Count
+		} else {
+			dst = append(dst, c)
+		}
+	}
+	return dst
+}
+
+func simplifyCIGARMerge(dst, cigar []CIGAREntry, style CIGARStyle) []CIGAREntry {
+	for i, c := range cigar {
+		var d *CIGAREntry
+		if len(dst) > 0 {
+			d = &dst[len(dst)-1]
+		}
+
+		if c.Letter != 'Z' {
+			if d != nil && d.Letter == 'Z' {
+				d.Letter = c.Letter
+				d.Count += c.Count
+			} else {
+				dst = append(dst, c)
+			}
+			continue
+		}
+
+		switch style {
+			case CIGARLeft:
+				if d == nil {
+					dst = append(dst, c)
+				} else {
+					d.Count += c.Count
+				}
+			case CIGARRight:
+				if i == len(cigar)-1 {
+					d.Count += c.Count
+				} else {
+					dst = append(dst, c)
+				}
+			case CIGARLongest:
+				var r *CIGAREntry
+				if (i < len(cigar)-1) {
+					r = &cigar[i+1]
+				}
+				if d == nil || r != nil && d.Count < r.Count {
+					dst = append(dst, c)
+				} else if d != nil {
+					d.Count += c.Count
+				} else {
+					dst = append(dst, c)
+				}
+			default:
+				panic(fmt.Errorf("invalid CIGAR style %v", style))
+		}
+	}
+	return dst
+}
+
+func simplifyCIGARMergeMatch(dst, cigar []CIGAREntry) []CIGAREntry {
+	for _, c := range cigar {
+		var d *CIGAREntry
+		if len(dst) > 0 {
+			d = &dst[len(dst)-1]
+		}
+		if d != nil && d.Letter == c.Letter {
+			d.Count += c.Count
+		} else {
+			dst = append(dst, c)
+		}
+	}
+	return dst
+}
+
+func SimplifyCIGARBuffered(dst, cigar []CIGAREntry, bpthresh int64, style CIGARStyle) []CIGAREntry {
+	dst = simplifyCIGARBase(dst[:0], cigar, bpthresh)
+	dst = simplifyCIGARMerge(dst[:0], dst, style)
+	return simplifyCIGARMergeMatch(dst[:0], dst)
+}
+
+func SimplifyCIGAR(cigar []CIGAREntry, bpthresh int64, style CIGARStyle) []CIGAREntry {
+	return SimplifyCIGARBuffered(make([]CIGAREntry, 0, len(cigar)), cigar, bpthresh, style)
+}
+
 // Col	Field	Type	Brief description
 // 1	QNAME	String	Query template NAME
 // 2	FLAG	Int	bitwise FLAG
